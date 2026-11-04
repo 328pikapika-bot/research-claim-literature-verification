@@ -1,0 +1,708 @@
+.task-detail-page {
+  min-height: 100vh;
+  padding: 32px 24px 48px;
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.14), transparent 30%),
+    radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 26%),
+    linear-gradient(180deg, #f7fbfc 0%, #eef5f8 100%);
+  color: #12303a;
+}
+
+.task-detail-page__header,
+.task-detail-page__error,
+.task-detail-page__layout {
+  width: min(1400px, 100%);
+  margin: 0 auto;
+}
+
+.task-detail-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.task-detail-page__header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.task-detail-page__back,
+.task-detail-page__retry,
+.task-literature-panel__button,
+.task-literature-card__collect {
+  border: 1px solid rgba(18, 48, 58, 0.14);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #12303a;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.task-detail-page__back,
+.task-detail-page__retry {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.task-detail-page__back:hover,
+.task-detail-page__retry:hover,
+.task-literature-panel__button:hover,
+.task-literature-card__collect:hover {
+  transform: translateY(-1px);
+  border-color: rgba(14, 165, 233, 0.38);
+  box-shadow: 0 12px 24px rgba(18, 48, 58, 0.08);
+}
+
+.task-detail-page__eyebrow,
+.task-stage-panel__eyebrow,
+.task-result-panel__eyebrow,
+.task-literature-panel__eyebrow {
+  margin: 0 0 8px;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.task-detail-page__title,
+.task-stage-panel__title,
+.task-result-panel__title,
+.task-literature-panel__title {
+  margin: 0;
+  color: #09202a;
+  line-height: 1.2;
+}
+
+.task-detail-page__title {
+  font-size: clamp(28px, 3vw, 40px);
+}
+
+.task-detail-page__header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.task-detail-page__header-meta span,
+.task-detail-page__status {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(18, 48, 58, 0.08);
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.task-detail-page__status.is-running,
+.task-detail-page__status.is-processing {
+  background: rgba(14, 165, 233, 0.16);
+  color: #0369a1;
+}
+
+.task-detail-page__status.is-completed {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
+.task-detail-page__status.is-failed,
+.task-detail-page__status.is-cancelled,
+.task-detail-page__status.is-canceled {
+  background: rgba(239, 68, 68, 0.16);
+  color: #b91c1c;
+}
+
+.task-detail-page__error,
+.task-stage-panel,
+.task-result-panel,
+.task-literature-panel,
+.task-detail-page__result-placeholder {
+  border: 1px solid rgba(18, 48, 58, 0.08);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 64px rgba(18, 48, 58, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.task-detail-page__error {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  color: #b91c1c;
+}
+
+.task-detail-page__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.95fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.task-detail-page__main {
+  display: grid;
+  gap: 24px;
+}
+
+.task-stage-panel,
+.task-result-panel,
+.task-literature-panel,
+.task-detail-page__result-placeholder {
+  padding: 24px;
+}
+
+.task-stage-panel__hero,
+.task-result-panel__header,
+.task-literature-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.task-stage-panel__summary {
+  margin: 12px 0 0;
+  max-width: 70ch;
+  color: #46606a;
+  line-height: 1.7;
+}
+
+.task-stage-panel__status,
+.task-stage-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.task-stage-panel__status.is-pending,
+.task-stage-card__badge.is-pending {
+  background: rgba(148, 163, 184, 0.16);
+  color: #475569;
+}
+
+.task-stage-panel__status.is-running,
+.task-stage-card__badge.is-running {
+  background: rgba(14, 165, 233, 0.16);
+  color: #0369a1;
+}
+
+.task-stage-panel__status.is-completed,
+.task-stage-card__badge.is-completed,
+.task-stage-card__badge.is-skipped {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
+.task-stage-panel__status.is-failed,
+.task-stage-card__badge.is-failed,
+.task-stage-card__badge.is-cancelled {
+  background: rgba(239, 68, 68, 0.16);
+  color: #b91c1c;
+}
+
+.task-stage-list {
+  display: grid;
+  gap: 14px;
+}
+
+.task-stage-card {
+  border: 1px solid rgba(18, 48, 58, 0.08);
+  border-radius: 22px;
+  background: #fdfefe;
+  overflow: hidden;
+}
+
+.task-stage-card.is-active {
+  border-color: rgba(14, 165, 233, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.16);
+}
+
+.task-stage-card__header {
+  width: 100%;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.task-stage-card__header-main {
+  display: flex;
+  gap: 14px;
+}
+
+.task-stage-card__index {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0369a1;
+  font-weight: 800;
+}
+
+.task-stage-card__title {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.task-stage-card__summary {
+  margin: 0;
+  color: #58717a;
+  line-height: 1.6;
+}
+
+.task-stage-card__header-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-stage-card__chevron {
+  color: #58717a;
+  transition: transform 0.18s ease;
+}
+
+.task-stage-card__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.task-stage-card__body {
+  padding: 0 20px 20px;
+}
+
+.task-stage-card__sub-steps,
+.task-stage-card__snippets,
+.task-literature-card__snippets {
+  margin: 0;
+  padding-left: 18px;
+  color: #3f5963;
+  line-height: 1.7;
+}
+
+.task-stage-card__sub-steps li,
+.task-claim-card__snippets li,
+.task-literature-card__snippets li {
+  margin-top: 8px;
+}
+
+.task-stage-card__sub-steps li {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.task-stage-card__sub-status {
+  color: #0369a1;
+  white-space: nowrap;
+}
+
+.task-stage-card__degradations,
+.task-result-panel__degradations {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #92400e;
+}
+
+.task-stage-card__error {
+  margin: 14px 0 0;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.task-stage-card__meta {
+  margin: 16px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.task-stage-card__meta div {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f5fafb;
+}
+
+.task-stage-card__meta dt {
+  margin-bottom: 4px;
+  color: #58717a;
+  font-size: 12px;
+}
+
+.task-stage-card__meta dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.task-result-panel__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #58717a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.task-result-panel__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.task-result-stat {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f5fafb;
+  display: grid;
+  gap: 6px;
+}
+
+.task-result-stat__value {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.task-result-stat__label {
+  color: #58717a;
+  font-size: 13px;
+}
+
+.task-result-stat.is-confirmed {
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.task-result-stat.is-partial {
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.task-result-stat.is-disputed {
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.task-result-stat.is-lack,
+.task-result-stat.is-conflicted {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.task-claim-list {
+  margin-top: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.task-claim-card {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: #fdfefe;
+  border: 1px solid rgba(18, 48, 58, 0.08);
+}
+
+.task-claim-card__header,
+.task-literature-card__topline,
+.task-literature-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.task-claim-card__id {
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.task-claim-card__status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.task-claim-card__status.is-confirmed {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
+.task-claim-card__status.is-partial {
+  background: rgba(14, 165, 233, 0.16);
+  color: #0369a1;
+}
+
+.task-claim-card__status.is-disputed {
+  background: rgba(245, 158, 11, 0.16);
+  color: #92400e;
+}
+
+.task-claim-card__status.is-lack,
+.task-claim-card__status.is-conflicted {
+  background: rgba(239, 68, 68, 0.16);
+  color: #b91c1c;
+}
+
+.task-claim-card__title {
+  margin: 14px 0 8px;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.task-claim-card__reason,
+.task-detail-page__result-placeholder {
+  color: #58717a;
+  line-height: 1.7;
+}
+
+.task-claim-card__evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.task-claim-card__evidence-chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(18, 48, 58, 0.12);
+  background: #fff;
+  cursor: pointer;
+}
+
+.task-claim-card__evidence-chip.is-support {
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #047857;
+}
+
+.task-claim-card__evidence-chip.is-conflict {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+}
+
+.task-claim-card__evidence-chip.is-background {
+  border-color: rgba(14, 165, 233, 0.3);
+  color: #0369a1;
+}
+
+.task-claim-card__snippets {
+  margin-top: 14px;
+}
+
+.task-result-panel__report {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: #0f172a;
+  color: #dbeafe;
+}
+
+.task-result-panel__report h3 {
+  margin: 0 0 12px;
+}
+
+.task-result-panel__report pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: Consolas, 'SFMono-Regular', monospace;
+  line-height: 1.7;
+}
+
+.task-literature-panel {
+  position: sticky;
+  top: 20px;
+}
+
+.task-literature-panel__title {
+  font-size: 30px;
+}
+
+.task-literature-panel__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.task-literature-panel__button {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.task-literature-panel__button.is-primary {
+  background: #0f766e;
+  color: #fff;
+  border-color: transparent;
+}
+
+.task-literature-panel__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.task-literature-panel__checkbox,
+.task-literature-panel__selected {
+  color: #46606a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.task-literature-panel__notice {
+  margin: 0 0 14px;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.task-literature-list {
+  display: grid;
+  gap: 14px;
+}
+
+.task-literature-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(18, 48, 58, 0.08);
+  background: #fdfefe;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.task-literature-card.is-highlighted {
+  border-color: rgba(14, 165, 233, 0.4);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+.task-literature-card.is-collected {
+  border-color: rgba(16, 185, 129, 0.32);
+}
+
+.task-literature-card__checkbox {
+  padding-top: 4px;
+}
+
+.task-literature-card__citation {
+  font-weight: 800;
+  color: #0369a1;
+}
+
+.task-literature-card__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-literature-card__label {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.12);
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.task-literature-card__title {
+  margin: 12px 0 8px;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.task-literature-card__meta,
+.task-literature-card__abstract,
+.task-literature-panel__empty {
+  color: #58717a;
+  line-height: 1.7;
+}
+
+.task-literature-card__abstract {
+  margin: 0;
+}
+
+.task-literature-card__snippets {
+  margin-top: 12px;
+}
+
+.task-literature-card__footer {
+  margin-top: 14px;
+}
+
+.task-literature-card__link {
+  color: #0369a1;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.task-literature-card__collect {
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 1100px) {
+  .task-detail-page__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .task-literature-panel {
+    position: static;
+  }
+
+  .task-result-panel__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .task-detail-page {
+    padding: 20px 14px 36px;
+  }
+
+  .task-detail-page__header,
+  .task-stage-panel__hero,
+  .task-result-panel__header,
+  .task-literature-panel__header,
+  .task-stage-card__header,
+  .task-stage-card__sub-steps li,
+  .task-claim-card__header,
+  .task-literature-card__topline,
+  .task-literature-card__footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .task-detail-page__header-meta {
+    justify-content: flex-start;
+  }
+
+  .task-result-panel__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .task-literature-card {
+    grid-template-columns: 1fr;
+  }
+}

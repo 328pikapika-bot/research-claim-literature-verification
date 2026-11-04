@@ -1,0 +1,18 @@
+{
+  "agent_display_name": "一致性评估智能体",
+  "agent_id": "consistency",
+  "agent_route": "claim_consistency",
+  "agent_prefix": "consistency_evaluation",
+  "agent_env_prefix": "CONSISTENCY_EVALUATION",
+  "frontend_base_path": "/ai/agent/claim_consistency/",
+  "canonical_frontend_url": "https://www.nstl.gov.cn/ai/agent/claim_consistency/",
+  "backend_container_port": 38004,
+  "frontend_container_port": 38005,
+  "local_backend_port": 17608,
+  "local_frontend_port": 18094,
+  "test_backend_published_port": 17618,
+  "test_frontend_published_port": 18094,
+  "flower_published_port": 15556,
+  "image_tag": "v1.0.0",
+  "platform_proxy_prefix": "/api/service/nstl/ai/agent/claim_consistency"
+}

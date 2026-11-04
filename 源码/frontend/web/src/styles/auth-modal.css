@@ -1,0 +1,677 @@
+/* ============================================
+   NSTL 用户登录认证 - 模态窗口样式
+   ============================================ */
+
+/* ==================== 全屏遮罩层 ==================== */
+
+.auth-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 200ms ease-in-out;
+}
+
+/* 淡入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 淡出动画 */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.auth-overlay.hiding {
+  animation: fadeOut 200ms ease-in-out forwards;
+}
+
+/* ==================== 模态窗口容器 ==================== */
+
+.auth-modal {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+              0 0 0 1px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 缩放进入动画 */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 缩放退出动画 */
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+.auth-modal.hiding {
+  animation: scaleOut 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ==================== 模态窗口头部 ==================== */
+
+.auth-modal-header {
+  flex-shrink: 0;
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+/* Logo 容器 */
+.auth-logo {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(124, 58, 237, 0.25);
+}
+
+.auth-logo svg {
+  width: 32px;
+  height: 32px;
+  color: #ffffff;
+}
+
+/* 标题 */
+.auth-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  text-align: center;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+/* 副标题 */
+.auth-modal-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 关闭按钮 */
+.auth-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #6b7280;
+}
+
+.auth-close-btn:hover {
+  background: #ffffff;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.auth-close-btn:active {
+  transform: scale(0.95);
+}
+
+.auth-close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ==================== iframe 容器 ==================== */
+
+.auth-iframe-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.auth-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  background: #ffffff;
+}
+
+/* iframe 加载状态 */
+.auth-iframe-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  gap: 16px;
+}
+
+.auth-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-loading-text {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* ==================== 模态窗口底部（可选） ==================== */
+
+.auth-modal-footer {
+  flex-shrink: 0;
+  padding: 16px 24px;
+  border-top: 1px solid #f3f4f6;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-footer-text {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.auth-footer-link {
+  color: #7c3aed;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.auth-footer-link:hover {
+  color: #6d28d9;
+  text-decoration: underline;
+}
+
+/* ==================== 错误提示样式 ==================== */
+
+.auth-error-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.auth-error-icon {
+  width: 48px;
+  height: 48px;
+  background: #fee2e2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc2626;
+}
+
+.auth-error-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.auth-error-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.auth-error-message {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.auth-error-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.auth-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: inherit;
+}
+
+.auth-btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+.auth-btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+  transform: translateY(-1px);
+}
+
+.auth-btn-primary:active {
+  transform: translateY(0);
+}
+
+.auth-btn-secondary {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.auth-btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+/* ==================== 超时提示样式 ==================== */
+
+.auth-timeout-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.auth-timeout-icon {
+  width: 48px;
+  height: 48px;
+  background: #fef3c7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+}
+
+.auth-timeout-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.auth-timeout-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.auth-timeout-message {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ==================== 消息提示样式 ==================== */
+
+.auth-message {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10001;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15),
+              0 0 0 1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 500px;
+  animation: slideDown 200ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.auth-message.hiding {
+  animation: slideUp 200ms ease-in forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+.auth-message-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.auth-message-content {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.5;
+}
+
+/* 消息类型样式 */
+.auth-message.success {
+  border-left: 4px solid #10b981;
+}
+
+.auth-message.success .auth-message-icon {
+  color: #10b981;
+}
+
+.auth-message.error {
+  border-left: 4px solid #ef4444;
+}
+
+.auth-message.error .auth-message-icon {
+  color: #ef4444;
+}
+
+.auth-message.warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.auth-message.warning .auth-message-icon {
+  color: #f59e0b;
+}
+
+.auth-message.info {
+  border-left: 4px solid #3b82f6;
+}
+
+.auth-message.info .auth-message-icon {
+  color: #3b82f6;
+}
+
+/* ==================== 响应式设计 ==================== */
+
+/* 平板设备 (768px - 1024px) */
+@media (max-width: 1024px) {
+  .auth-modal {
+    max-width: 420px;
+  }
+}
+
+/* 移动设备 (最大 768px) */
+@media (max-width: 768px) {
+  .auth-overlay {
+    padding: 16px;
+  }
+
+  .auth-modal {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 12px;
+  }
+
+  .auth-modal-header {
+    padding: 20px 20px 16px;
+  }
+
+  .auth-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .auth-logo svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .auth-modal-title {
+    font-size: 18px;
+  }
+
+  .auth-modal-subtitle {
+    font-size: 13px;
+  }
+
+  .auth-close-btn {
+    width: 28px;
+    height: 28px;
+    top: 12px;
+    right: 12px;
+  }
+
+  .auth-close-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .auth-modal-footer {
+    padding: 12px 20px;
+  }
+
+  .auth-message {
+    min-width: 280px;
+    max-width: calc(100vw - 32px);
+    padding: 12px 20px;
+  }
+}
+
+/* 小屏幕移动设备 (最大 480px) */
+@media (max-width: 480px) {
+  .auth-overlay {
+    padding: 12px;
+  }
+
+  .auth-modal {
+    max-height: 90vh;
+    border-radius: 10px;
+  }
+
+  .auth-modal-header {
+    padding: 16px 16px 12px;
+    gap: 10px;
+  }
+
+  .auth-logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .auth-logo svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .auth-modal-title {
+    font-size: 17px;
+  }
+
+  .auth-modal-subtitle {
+    font-size: 12px;
+  }
+
+  .auth-error-container,
+  .auth-timeout-container {
+    padding: 20px;
+  }
+
+  .auth-error-icon,
+  .auth-timeout-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .auth-error-icon svg,
+  .auth-timeout-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .auth-error-title,
+  .auth-timeout-title {
+    font-size: 15px;
+  }
+
+  .auth-error-message,
+  .auth-timeout-message {
+    font-size: 13px;
+  }
+
+  .auth-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .auth-error-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .auth-btn {
+    width: 100%;
+  }
+
+  .auth-message {
+    min-width: auto;
+    width: calc(100vw - 24px);
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ==================== 辅助功能和可访问性 ==================== */
+
+/* 聚焦样式 */
+.auth-close-btn:focus-visible,
+.auth-btn:focus-visible,
+.auth-footer-link:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
+}
+
+/* 减少动画（用户偏好） */
+@media (prefers-reduced-motion: reduce) {
+  .auth-overlay,
+  .auth-modal,
+  .auth-message,
+  .auth-spinner {
+    animation: none;
+  }
+
+  .auth-close-btn,
+  .auth-btn,
+  .auth-footer-link {
+    transition: none;
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  .auth-overlay {
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  .auth-modal {
+    border: 2px solid #000000;
+  }
+
+  .auth-close-btn,
+  .auth-btn-secondary {
+    border: 2px solid #000000;
+  }
+}
+
+/* ==================== 打印样式 ==================== */
+
+@media print {
+  .auth-overlay,
+  .auth-modal,
+  .auth-message {
+    display: none !important;
+  }
+}
