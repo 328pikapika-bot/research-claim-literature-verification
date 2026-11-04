@@ -1,0 +1,416 @@
+/* ========== 意见反馈组件样式 ========== */
+/* 仅保留反馈弹窗相关样式，移除与宿主页面冲突的全局样式 */
+
+body.dialog-open {
+  overflow: hidden;
+}
+
+/* Feedback component hidden state - used by feedback.js */
+#dialog-backdrop.hidden,
+#top-toast.hidden,
+.feedback-dialog .hidden,
+#file-list.hidden {
+  display: none !important;
+}
+
+.top-toast {
+  position: fixed;
+  left: 50%;
+  top: 24px;
+  z-index: 30;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(35, 46, 90, 0.92);
+  box-shadow: 0 14px 28px rgba(24, 29, 54, 0.2);
+  color: #fff;
+  font-size: 13px;
+}
+
+.feedback-entry {
+  position: fixed;
+  right: 18px;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  z-index: 8;
+  transition: transform 0.2s ease;
+}
+
+.feedback-entry:hover {
+  transform: translateY(-2px);
+}
+
+.feedback-entry-image {
+  display: block;
+  width: 112px;
+  height: auto;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(28, 35, 56, 0.56);
+  backdrop-filter: blur(5px);
+  z-index: 20;
+}
+
+.feedback-dialog {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 48px);
+  border-radius: 10px;
+  background:
+    url("../images/dialog-bg.png") center top / 100% 100% no-repeat,
+    linear-gradient(135deg, #ffffff 0%, #fbfcff 100%);
+  box-shadow: 0 26px 72px rgba(27, 35, 77, 0.24);
+  overflow: auto;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 30px 14px;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-family: "MicrosoftYaHei", "Microsoft YaHei", sans-serif;
+  font-weight: 400;
+  color: rgb(33, 33, 33);
+}
+
+.icon-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #c1c7d9;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+  padding: 0;
+}
+
+.icon-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dialog-body {
+  padding: 29px 42px 14px;
+}
+
+.intro-text {
+  width: min(520px, 100%);
+  margin: 0 0 34px;
+  font-family: "MicrosoftYaHei", "Microsoft YaHei", sans-serif;
+  color: rgb(102, 112, 153);
+  font-size: 16px;
+  line-height: 1.625;
+  font-weight: 400;
+}
+
+.field-label {
+  display: block;
+  margin: 0 0 7px;
+  font-family: "MicrosoftYaHei", "Microsoft YaHei", sans-serif;
+  color: rgb(103, 103, 103);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.select-shell,
+.text-input,
+.textarea-shell {
+  width: 100%;
+  border: 1px solid #d9dfed;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.select-shell select,
+.text-input,
+.textarea-shell textarea {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #41475d;
+}
+
+.select-shell:focus-within,
+.text-input:focus,
+.textarea-shell:focus-within {
+  border-color: #a8b6e9;
+  box-shadow: 0 0 0 3px rgba(120, 143, 219, 0.12);
+}
+
+.select-shell {
+  position: relative;
+  margin-bottom: 26px;
+}
+
+.select-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-52%);
+  color: #8190c0;
+  pointer-events: none;
+}
+
+.select-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.select-shell select {
+  appearance: none;
+  height: 38px;
+  padding: 0 38px 0 14px;
+  font-size: 16px;
+}
+
+.textarea-shell {
+  position: relative;
+  margin-bottom: 26px;
+  padding-bottom: 30px;
+}
+
+.textarea-shell textarea {
+  min-height: 102px;
+  resize: none;
+  padding: 14px 14px 0;
+  font-size: 15px;
+  line-height: 32px;
+}
+
+.counter {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  color: #9ba6c4;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.upload-block {
+  min-height: 42px;
+  padding: 0;
+  border-top: 0;
+  margin-bottom: 30px;
+}
+
+.upload-tip {
+  display: none;
+}
+
+.upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 120px;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid #8e9fd3;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+  color: #7386bb;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.upload-button img {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #d7dfef;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 12px rgba(68, 86, 140, 0.08);
+  color: #4e576f;
+  font-size: 13px;
+}
+
+.file-item strong {
+  display: block;
+  margin-bottom: 2px;
+  color: #434c63;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.file-item span {
+  color: #7f8bab;
+  font-size: 12px;
+}
+
+.file-item button {
+  border: 0;
+  background: transparent;
+  color: #4568f2;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.text-input {
+  height: 40px;
+  padding: 0 14px;
+  margin-top: 2px;
+  font-size: 15px;
+  border: 1px solid #cfd6e6;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 1px 2px rgba(33, 33, 33, 0.03);
+}
+
+.text-input::placeholder {
+  color: #b5bccd;
+}
+
+.has-error {
+  border-color: #f16868 !important;
+}
+
+.error-text {
+  margin: 8px 0 18px;
+  color: #ef5b5b;
+  font-size: 12px;
+}
+
+.success-text {
+  margin: 14px 0 0;
+  color: #2b9d67;
+  font-size: 12px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 22px 0 32px;
+}
+
+.primary-button,
+.secondary-button {
+  min-width: 100px;
+  height: 40px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.primary-button {
+  border: 0;
+  background: linear-gradient(180deg, #3e61ff 0%, #284df2 100%);
+  box-shadow: 0 10px 22px rgba(53, 88, 245, 0.2);
+  color: #fff;
+}
+
+.primary-button:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.secondary-button {
+  border: 1px solid #eceff5;
+  background: linear-gradient(180deg, #f8f8fa 0%, #f1f1f4 100%);
+  color: #80828e;
+}
+
+@media (max-width: 640px) {
+  .feedback-entry {
+    right: 12px;
+    bottom: 18px;
+    top: auto;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .feedback-entry-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .dialog-backdrop {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .feedback-dialog {
+    max-height: 88vh;
+    border-radius: 14px 14px 8px 8px;
+  }
+
+  .dialog-body {
+    padding: 18px 16px 12px;
+  }
+
+  .dialog-header {
+    padding: 16px 16px 10px;
+  }
+
+  .dialog-header h2 {
+    font-size: 17px;
+  }
+
+  .field-label {
+    font-size: 15px;
+  }
+
+  .select-shell {
+    margin-bottom: 22px;
+  }
+
+  .textarea-shell {
+    margin-bottom: 22px;
+  }
+
+  .intro-text {
+    margin-bottom: 24px;
+    font-size: 14px;
+    line-height: 26px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-width: 92px;
+    height: 38px;
+    font-size: 15px;
+  }
+}
