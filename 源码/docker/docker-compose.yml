@@ -1,0 +1,63 @@
+# ============================================================
+# 一致性评估智能体 (ClaimConsistency Agent) 本地开发环境
+# ============================================================
+
+services:
+  backend:
+    image: ${CLAIMCONSISTENCY_BACKEND_IMAGE:-docker-hosted.example.invalid/nstl/claim-consistency/claim-consistency-backend:v1.0.0}
+    container_name: claim-consistency-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-17608}:38004"
+    env_file:
+      - ../.env
+    environment:
+      - BACKEND_PORT=38004
+      - PYTHONUNBUFFERED=1
+      - LOG_DIR=/app/data/logs
+      - UPLOAD_DIR=/app/data/uploads
+      - ALLOWED_ORIGINS=http://127.0.0.1:18094,http://localhost:18094,https://www.nstl.gov.cn:18094
+      - ALLOW_DEFAULT_USER_SCOPE=false
+      - CONSISTENCY_EVALUATION_MOCK_AUTH_ENABLED=false
+    volumes:
+      - claim-consistency-logs:/app/data/logs
+      - claim-consistency-uploads:/app/data/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:38004/system/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    networks:
+      - claimconsistency-net
+
+  frontend:
+    image: ${CLAIMCONSISTENCY_FRONTEND_IMAGE:-docker-hosted.example.invalid/nstl/claim-consistency/claim-consistency-frontend:v1.0.0}
+    container_name: claim-consistency-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-18094}:38005"
+    environment:
+      - BACKEND_HOST=backend
+      - BACKEND_PORT=38004
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:38005/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    networks:
+      - claimconsistency-net
+
+volumes:
+  claim-consistency-logs:
+    name: claim-consistency-logs
+  claim-consistency-uploads:
+    name: claim-consistency-uploads
+
+networks:
+  claimconsistency-net:
+    name: claimconsistency-net

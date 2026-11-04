@@ -1,0 +1,40 @@
+# Environment
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node / Frontend
+frontend/web/node_modules/
+frontend/web/dist/
+frontend/web/.vite*
+frontend/web/*.log
+frontend/web_demo/*.pem
+
+# Runtime data
+data/
+logs/
+uploads/
+backend/data/
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+*.7z
+*.rar
+*.log
+
+.env
+.env.*
+!.env.example
+!.env.template

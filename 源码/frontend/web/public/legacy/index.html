@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>一致性评估智能体</title>
+    <style>[v-cloak]{display:none!important}</style>
+    <!-- nstl页面规范 -->
+    <link rel="stylesheet" href="https://www.nstl.gov.cn/component/static/css/index.css">
+    <!-- Favicon - 使用 data URI 避免 404 错误 -->
+    <link rel="icon" href="static/images/favicon.ico">
+    <link rel="stylesheet" href="styles.css"/>
+    <!-- 认证模块样式 -->
+    <link rel="stylesheet" href="auth-modal.css"/>
+    <!-- 安全确认弹窗样式 -->
+    <link rel="stylesheet" href="security-warning-modal.css"/>
+    <!-- 意见反馈弹窗样式 -->
+    <link rel="stylesheet" href="static/css/feedback.css"/>
+    <!-- v-cloak 内联样式：防止 Vue 编译前 mustache 语法闪烁 -->
+    <style>[v-cloak] { display: none !important; }</style>
+    <!-- Vue 3 - 本地版本 -->
+    <script src="static/js/vue.global.prod.js"></script>
+    <!-- Material Icons - 使用国内CDN镜像 -->
+    <link href="https://fonts.loli.net/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="//at.alicdn.com/t/c/font_3618823_n0eix4nroh.css">
+    <!-- PDF.js for PDF parsing - 本地版本 -->
+    <script src="static/js/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'static/js/pdf.worker.min.js';
+    </script>
+    <!-- File Parser Service -->
+    <script src="file-parser.js"></script>
+    <!-- 公共配置 -->
+    <script src="config.js"></script>
+    <!-- 认证模块 -->
+    <script src="auth.js"></script>
+</head>
+<body>
+<!-- 页面加载遮罩层 -->
+<div id="pageLoadingOverlay" class="page-loading-overlay">
+    <div class="loading-logo">
+        <span class="loading-logo-text">📊</span>
+    </div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text">正在加载...</div>
+</div>
+
+<div id="app" class="page-wrapper landing-page" v-cloak>
+    <!-- 统一页头 -->
+    <header class="site-head">
+      <div class="head-inner">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <a href="https://www.nstl.gov.cn/" class="brand">
+            <div class="logo-wrapper">
+                <img class="logo-icon" src="static/images/logo.png" alt="NSTL Logo">
+            </div>
+            <div class="logo-text-wrapper">
+                <img class="logo-text" src="static/images/logo-text.png" alt="国家科技图书文献中心">
+            </div>
+          </a>
+          <a href="https://www.nstl.gov.cn/ai/index_qa" class="product">
+            <span class="product-name">创新服务助手</span>
+            <img src="static/images/icon-version-3.0.png" alt="V3.0版">
+          </a>
+          <div class="mini-program-tip">
+            <img class="mini-program-bg" src="static/images/wxMini_in-BNULTIgP.png" alt="">
+            <div class="tip-badge">
+              <span class="tip-text">小程序上线</span>
+              <span class="tip-text-btn">欢迎体验</span>
+            </div>
+            <div class="qrcode-popup">
+              <img src="static/images/QRcode4-BSI3YE5n.png" alt="小程序二维码">
+            </div>
+          </div>
+        </div>
+        <div class="head-actions">
+          <a
+            @click="viewTaskHistory"
+            class="history-link"
+            :class="{ 'requires-login': !isAuthenticated }"
+            :title="isAuthenticated ? '任务列表' : '登录后可查看任务列表'"
+          >
+            <img src="static/images/history.png" alt="">
+            任务列表
+          </a>
+          <div
+            v-if="!isAuthenticated"
+            class="user-chip is-login-action"
+            title="点击登录"
+            @click="handleAccountChipClick"
+          >
+            <span class="user-name">登录</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content landing-body">
+        <!-- Header Section -->
+        <section class="landing-header">
+            <!-- Search Icon -->
+            <!-- <div class="search-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="11" cy="11" r="7" stroke="#a855f7" stroke-width="2"/>
+                <path d="M20 20L15.5 15.5" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div> -->
+
+            <!-- Title -->
+<!--            <h1 class="main-title">DeepResearch <span>深度研究智能体</span></h1>-->
+            <h1 class="main-title"><span>一致性评估智能体</span></h1>
+
+            <!-- Subtitle -->
+            <p class="subtitle">
+                基于科技文献深度检索与引文验证，自动提取用户输入文本中的关键主张，检索相关文献证据，逐项判定主张与文献的一致性，生成可追溯、可验证的评估报告。
+            </p>
+
+            <!-- Feature Tags -->
+            <!--        <div class="feature-tags">-->
+            <!--          <span class="tag">深度研究</span>-->
+            <!--          <span class="tag">学术报告生成</span>-->
+            <!--          <span class="tag">多模态分析</span>-->
+            <!--          <span class="tag">可验证研究</span>-->
+            <!--          <span class="tag">课题立项</span>-->
+            <!--        </div>-->
+        </section>
+
+        <!-- Form Card -->
+        <section class="landing-card">
+            <!--        <div class="card-header">-->
+            <!--          <h2 class="card-title">开始您的研究</h2>-->
+            <!--          <p class="card-desc">输入您的研究主题或问题，DeepResearch将为您生成深度研究报告</p>-->
+            <!--        </div>-->
+
+            <form @submit.prevent="handleSubmit" class="landing-form">
+                <!-- Research Topic -->
+                <div class="form-group full">
+            <textarea
+                    v-model="form.topic"
+                    @input="onTopicInput"
+                    @blur="validateTopic"
+                    rows="2"
+                    placeholder="请输入需要评估一致性的科技文献文本或研究主题"
+                    :class="{ 'has-error': validationErrors.topic }"
+            ></textarea>
+                    <span v-if="validationErrors.topic" class="error-message">
+                {{ validationErrors.topic }}
+              </span>
+                </div>
+
+                <!-- Form Row 1 -->
+                <div class="form-row">
+                    <div class="form-group no-direction">
+                        <label>评估类型</label>
+                        <select v-model="form.researchType">
+                            <option value="综合评估">综合评估</option>
+                            <option value="专项验证">专项验证</option>
+                        </select>
+                    </div>
+
+                    <!--            <div class="form-group">-->
+                    <!--              <label>报告长度</label>-->
+                    <!--              <select v-model="form.reportLength">-->
+                    <!--                <option value="精简">精简（3-5页）</option>-->
+                    <!--                <option value="标准">标准（5-15页）</option>-->
+                    <!--                <option value="详细">详细（≥15页）</option>-->
+                    <!--              </select>-->
+                    <!--            </div>-->
+                    <div class="form-group no-direction">
+                        <label>语言偏好</label>
+                        <select v-model="form.languagePref">
+                            <option value="中文优先">中文优先</option>
+                            <option value="英文优先">英文优先</option>
+                            <option value="中英混合">中英混合</option>
+                        </select>
+                    </div>
+                    <div class="form-group year-range-group no-direction">
+                        <label>文献年份范围</label>
+                        <div class="year-inputs">
+                            <input
+                                    type="number"
+                                    v-model.number="form.yearStart"
+                                    @input="onYearInput"
+                                    @blur="validateYearRange"
+                                    min="1900"
+                                    :max="currentYear"
+                                    :class="{ 'has-error': validationErrors.yearRange }"
+                            />
+                            <span class="year-separator">至</span>
+                            <input
+                                    type="number"
+                                    v-model.number="form.yearEnd"
+                                    @input="onYearInput"
+                                    @blur="validateYearRange"
+                                    min="1900"
+                                    :max="currentYear"
+                                    :class="{ 'has-error': validationErrors.yearRange }"
+                            />
+                        </div>
+                        <span v-if="validationErrors.yearRange" class="error-message">
+                {{ validationErrors.yearRange }}
+              </span>
+                    </div>
+                </div>
+
+                <!-- Form Row 2 - Language -->
+<!--                <div class="form-row language-row">-->
+<!--                    <div class="form-group">-->
+<!--                        <label>语言偏好</label>-->
+<!--                        <select v-model="form.languagePref">-->
+<!--                            <option value="中文优先">中文优先</option>-->
+<!--                            <option value="英文优先">英文优先</option>-->
+<!--                            <option value="中英混合">中英混合</option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+                <!-- File Upload Module -->
+                <div class="form-group full">
+                    <div class="title">上传本地文献</div>
+                    <div class="desc">支持上传不超过10个文件，单个文件最大 <b>50MB</b>，支持PDF、TXT、Markdown格式的文件上传</div>
+                    <div
+                            class="file-upload-area"
+                            :class="{ 'drag-over': isDragOver, 'has-files': uploadedFiles.length > 0, 'parsing': isParsing, 'has-error': validationErrors.files }"
+                            @dragenter.prevent="handleDragEnter"
+                            @dragleave.prevent="handleDragLeave"
+                            @dragover.prevent
+                            @drop.prevent="handleDrop"
+                            @click="triggerFileInput"
+                    >
+                        <input
+                                ref="fileInput"
+                                type="file"
+                                multiple
+                                accept=".pdf,.txt,.md"
+                                @change="handleFileSelect"
+                                style="display: none;"
+                        />
+
+                        <!-- Empty State -->
+                        <div v-if="uploadedFiles.length === 0 && !isUploading && !isParsing" class="upload-empty-state">
+                            <div class="upload-icon">
+                                <!-- <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                                          stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                    <path d="M17 8L12 3L7 8" stroke="currentColor" stroke-width="2"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                </svg> -->
+                                <img src="static/images/upload.png" alt="">
+                            </div>
+                            <p class="upload-text">拖放文件到此处或点击选择文件</p>
+                            <div class="upload-btn">
+                              <img src="static/images/file.png" alt="">
+                              <span>浏览文件</span>
+                            </div>
+                            <p class="upload-hint">上传的文件仅用于本次分析，不会存储在我们的服务器上</p>
+                        </div>
+
+                        <!-- Parsing State -->
+                        <div v-if="isParsing" class="parsing-state">
+                            <div class="upload-progress-header">
+                                <span class="material-icons-outlined progress-icon">auto_fix_high</span>
+                                <span class="progress-text">正在解析文件内容...</span>
+                            </div>
+                            <p class="upload-hint">PDF文件解析可能需要一些时间</p>
+                        </div>
+
+                        <!-- Uploading Progress -->
+                        <div v-if="isUploading" class="upload-progress-container">
+                            <div class="upload-progress-header">
+                                <span class="material-icons-outlined progress-icon">cloud_upload</span>
+                                <span class="progress-text">正在上传 {{ uploadingFiles.length }} 个文件...</span>
+                            </div>
+                            <div class="upload-progress-list">
+                                <div v-for="(file, index) in uploadingFiles" :key="index" class="upload-progress-item">
+                                    <div class="file-info">
+                                        <span class="material-icons-outlined file-icon">description</span>
+                                        <span class="file-name">{{ file.name }}</span>
+                                        <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                                    </div>
+                                    <div class="progress-bar-wrapper">
+                                        <div class="progress-bar" :style="{ width: file.progress + '%' }"></div>
+                                    </div>
+                                    <span class="progress-percent">{{ file.progress }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Uploaded Files List -->
+                        <div v-if="uploadedFiles.length > 0 && !isUploading && !isParsing" class="uploaded-files-container">
+                            <div class="uploaded-files-list">
+                                <div v-for="(file, index) in uploadedFiles" :key="index"
+                                     class="uploaded-file-item"
+                                     :class="file.status"
+                                     @click.stop>
+                                    <div class="file-info">
+                                      <i v-if="file.type=='pdf'" class="iconfont icon-file-pdf"></i>
+                                      <span v-else class="material-icons-outlined file-icon"
+                                              :style="{ color: getFileIconColor(file.type) }">{{ getFileIcon(file.type) }}</span>
+                                        <div class="file-details">
+                                            <span class="file-name">{{ file.name }}</span>
+                                            <span class="file-meta">
+                        {{ formatFileSize(file.size) }} ·
+                        <span v-if="file.status === 'parsed'" class="status-parsed">已解析</span>
+                        <span v-else-if="file.status === 'parsing'" class="status-parsing">解析中...</span>
+                        <span v-else-if="file.status === 'error'" class="status-error">{{ file.error || '解析失败' }}</span>
+                        <span v-else>{{ file.status === 'uploaded' ? '已上传' : '上传失败' }}</span>
+                      </span>
+                                        </div>
+                                    </div>
+                                    <div class="file-actions">
+                                        <button type="button" class="remove-file-btn" @click.stop="removeFile(index)">
+                                            <span class="material-icons-outlined">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="add-more-files" @click.stop="triggerFileInput">
+                                <span class="material-icons-outlined">add</span>
+                                <span>添加更多文件</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span v-if="validationErrors.files" class="error-message">
+                {{ validationErrors.files }}
+              </span>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions full">
+                    <button type="submit" class="submit-btn" :disabled="isLoading">
+                      <div class="await-tip">一致性评估预计耗时约5-15分钟，请您耐心等待。</div>
+                        <!--              <svg v-if="!isLoading" class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">-->
+                        <!--                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>-->
+                        <!--                <path d="M12 8V16M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>-->
+                        <!--              </svg>-->
+                        <img src="static/images/mofa.png" alt="">
+                        <span v-if="!isLoading">开始一致性评估</span>
+                        <span v-else>评估中...</span>
+                    </button>
+                </div>
+<!--                <div class="ai-tip">-->
+<!--                  内容由AI生成，其内容的准确性和完整性无法保证，仅供参考。-->
+<!--                </div>-->
+
+                <div class="form-group full report-samples-group">
+                  <div class="title">报告样例</div>
+                  <div class="report-samples-grid">
+                    <article class="report-sample-card report-sample-card-blue" @click="viewReportSample('run_4e27b46707a6')">
+                      <div class="report-sample-glow bg"></div>
+                      <div class="report-sample-caption">
+                        石墨烯制备技术主张<br>一致性评估报告
+                      </div>
+                    </article>
+                    <article class="report-sample-card report-sample-card-peach" @click="viewReportSample('run_1c9604df2890')">
+                      <div class="report-sample-glow bg2"></div>
+                      <div class="report-sample-caption">
+                        深度学习医学影像分析<br>主张与文献验证
+                      </div>
+                    </article>
+                    <article class="report-sample-card report-sample-card-cyan" @click="viewReportSample('run_5ec2e4433a76')">
+                      <div class="report-sample-glow bg3"></div>
+                      <div class="report-sample-caption">
+                        土壤微塑料环境影响<br>引文一致性判定
+                      </div>
+                    </article>
+                  </div>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Toast 通知容器 -->
+    <!-- <div class="toast-container">
+        <transition-group name="toast">
+            <div v-for="toast in toasts" :key="toast.id"
+                 class="toast-item"
+                 :class="toast.type">
+                <span class="material-icons-outlined toast-icon">{{ getToastIcon(toast.type) }}</span>
+                <span class="toast-message">{{ toast.message }}</span>
+            </div>
+        </transition-group>
+    </div> -->
+    <!-- 提示弹窗 -->
+    <div class="nstl-dialog-overlay" id="demoDialog" aria-hidden="true">
+      <div class="nstl-dialog" role="dialog" aria-modal="true" aria-labelledby="demoDialogTitle">
+        <div class="nstl-dialog-header">
+          <div class="nstl-dialog-title" id="demoDialogTitle">提示</div>
+          <span class="nstl-dialog-close" id="demoDialogClose">×</span>
+        </div>
+        <div class="nstl-dialog-body">
+          <p class="nstl-dialog-text-primary" v-for="item in toasts" :key="item.id">{{ item.message }}</p>
+        </div>
+        <div class="nstl-dialog-footer">
+          <button type="button" class="nstl-btn nstl-btn-blue" id="demoDialogConfirm">确认</button>
+          <button type="button" class="nstl-btn nstl-dialog-btn-cancel" id="demoDialogCancel">取消</button>
+        </div>
+      </div>
+    </div>
+    <!-- 文件上传安全确认弹窗 -->
+    <div id="securityWarningOverlay" class="security-warning-overlay" @click="cancelSecurityWarning">
+      <div class="security-warning-modal" @click.stop>
+        <!-- 关闭按钮 -->
+        <button class="security-close-btn" @click="cancelSecurityWarning" type="button" aria-label="关闭">
+          <span class="material-icons-outlined">close</span>
+        </button>
+
+        <!-- 警告图标 -->
+        <!-- <div class="security-warning-icon" aria-hidden="true">
+          <span class="material-icons-outlined">warning</span>
+        </div> -->
+
+        <!-- 标题 -->
+        <!-- <h3 class="security-warning-title">提示</h3> -->
+
+        <!-- 警告内容 -->
+        <!-- <div class="security-warning-content">
+          严禁在本互联网非涉密平台处理、传输国家秘密，请确认扫描、传输的文件资料不涉及国家秘密！本平台不保存传输的文件资料和解读结果。
+        </div> -->
+
+        <div class="my_dialog_content">
+          <p class="my_dialog_content_tit">
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px">
+              <image
+                x="0px"
+                y="0px"
+                width="24px"
+                height="24px"
+                xlink:href="data:img/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAATlBMVEUAAAD6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT///8kR2HxAAAAGHRSTlMABi1BBFe6+DvWbf2A8ujw4ED28bwK92DfMj5PAAAAAWJLR0QZ7G61iAAAAAd0SU1FB+gMGxESFAvhYzkAAACZSURBVCjPdVJbEsMgCETFV5I2tU0a7n/S2gdKM7JfDKsLLAAwjHXOGjgBfYhUEYNHmU+ZGnLq+WkmgXlqeTrhxyR+vyz856OGrH8BuHKddweeBVaAG8e+EmFEhDpXHBHRgKURQRbKmHAaUXQptXhv9474EO32AWnbWuilJZR7hNLEuO9PaWK3/Tj+bdcXpa9WP4bv+ZQizucFp7ohPoJPZwYAAAAASUVORK5CYII="
+              />
+            </svg>
+            提示
+          </p>
+          <p class="red">
+            严禁在本互联网非涉密平台处理、传输国家秘密，请确认扫描、传输的文件资料不涉及国家秘密！本平台不保存传输的文件资料和解读结果。
+          </p>
+        </div>
+        <div class="dialog-footer">
+          <div class="btn" @click="confirmSecurityWarning">同意</div>
+        </div>
+        <!-- 同意按钮 -->
+        <!-- <button class="security-agree-btn" @click="confirmSecurityWarning" type="button">
+          同意
+        </button> -->
+      </div>
+    </div>
+
+    <!-- 限流警告弹窗 -->
+    <div id="rateLimitWarningOverlay" 
+         class="security-warning-overlay" 
+         style="display: none;" 
+         @click="cancelRateLimitWarning">
+      <div class="security-warning-modal" @click.stop>
+        <!-- 关闭按钮 -->
+        <button class="security-close-btn" 
+                @click="cancelRateLimitWarning" 
+                type="button" 
+                aria-label="关闭">
+          <span class="material-icons-outlined">close</span>
+        </button>
+
+        <div class="my_dialog_content">
+          <p class="my_dialog_content_tit">
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px">
+              <image
+                x="0px"
+                y="0px"
+                width="24px"
+                height="24px"
+                xlink:href="data:img/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAMAAADXqc3KAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAATlBMVEUAAAD6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT6rRT///8kR2HxAAAAGHRSTlMABi1BBFe6+DvWbf2A8ujw4ED28bwK92DfMj5PAAAAAWJLR0QZ7G61iAAAAAd0SU1FB+gMGxESFAvhYzkAAACZSURBVCjPdVJbEsMgCETFV5I2tU0a7n/S2gdKM7JfDKsLLAAwjHXOGjgBfYhUEYNHmU+ZGnLq+WkmgXlqeTrhxyR+vyz856OGrH8BuHKddweeBVaAG8e+EmFEhDpXHBHRgKURQRbKmHAaUXQptXhv9474EO32AWnbWuilJZR7hNLEuO9PaWK3/Tj+bdcXpa9WP4bv+ZQizucFp7ohPoJPZwYAAAAASUVORK5CYII="
+              />
+            </svg>
+            提示
+          </p>
+          <p class="red">
+            {{ rateLimitMessage }}
+          </p>
+        </div>
+        <div class="dialog-footer">
+          <div class="btn" @click="confirmRateLimitWarning">我知道了</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 统一页尾 -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-links">
+          <div class="footer-section">
+            <h5>关于我们</h5>
+            <ul>
+              <li><a href="https://www.nstl.gov.cn/Portal/zzjg_jgjj.html" target="_blank">组织机构</a></li>
+              <li><a href="https://www.nstl.gov.cn/Portal/qgwftx_qgfwtxjs.html" target="_blank">全国服务体系</a></li>
+              <li><a href="https://www.nstl.gov.cn/Portal/kxyj_kfhq.html" target="_blank">研究与发展</a></li>
+              <li><a href="https://www.nstl.gov.cn/Portal/gjhz_scoap3.html" target="_blank">国际合作与交流</a></li>
+              <li><a href="https://www.nstl.gov.cn/Portal/lxwm.html" target="_blank">联系我们</a></li>
+              <li><a href="https://www.nstl.gov.cn/Portal/wxzyjs.html" target="_blank">文献资源建设</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h5>帮助</h5>
+            <div class="footer-help-columns">
+              <ul>
+                <li><a href="https://www.nstl.gov.cn/Portal/zyyfw_zyjs.html" target="_blank">资源与服务</a></li>
+                <li><a href="https://www.nstl.gov.cn/help/zzzx.html" target="_blank">个人中心</a></li>
+                <li><a href="https://www.nstl.gov.cn/useradvise.html" target="_blank">意见反馈</a></li>
+              </ul>
+              <ul>
+                <li><a href="https://anyask.nstl.gov.cn/ask" target="_blank">参考咨询</a></li>
+                <li><a href="https://www.nstl.gov.cn/help/hotright.html" target="_blank">用户热线</a></li>
+                <li><a href="https://www.nstl.gov.cn/help/copyright.html" target="_blank">版权声明</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-qr-codes">
+          <div class="qr-item">
+            <div class="qr-box">
+              <img src="static/images/officialWeChat.png" alt="官方微信" style="width: 96px; height: 96px; display: block; object-fit: contain;">
+            </div>
+            <span class="qr-label">官方微信</span>
+          </div>
+          <div class="qr-item">
+            <div class="qr-box">
+              <img src="static/images/miniProgram.png" alt="微信小程序" style="width: 96px; height: 96px; display: block; object-fit: contain;">
+            </div>
+            <span class="qr-label">微信小程序</span>
+          </div>
+        </div>
+
+        <div class="footer-info">
+          <div class="info-content">
+            <div class="hotline">
+              <span class="hotline-text">服务热线： 4008-161-200&nbsp;&nbsp;&nbsp;800-990-8900</span>
+            </div>
+            <div class="org-info">
+              <div class="org-badge">
+                <img src="static/images/blue.png" alt="事业单位" style="width: 64px; height: auto; object-fit: contain;">
+              </div>
+              <div class="org-details">
+                <h2 class="org-name">国家科技图书文献中心</h2>
+                <div class="contact-item">
+                  <span class="material-icons-outlined contact-icon">phone</span>
+                  <span>4008-161-200(免长途话费); 800-990-8900(免费); 010-58882057</span>
+                </div>
+                <div class="contact-item">
+                  <span class="material-icons-outlined contact-icon">email</span>
+                  <a href="mailto:service@nstl.gov.cn">service@nstl.gov.cn</a>
+                </div>
+              </div>
+            </div>
+            <div class="footer-bottom">
+              <span class="address">地址：北京市复兴路15号</span>
+              <div class="beian">
+                <img src="static/images/beian.png" alt="" style="width: 12px; height: 12px; object-fit: contain;">
+                <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank">京ICP备10027328号</a>
+              </div>
+            </div>
+            <div class="copyright">
+              © Copyright(C)2023 NSTL All Rights Reserved 版权所有
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+</div>
+
+<!-- 意见反馈浮动按钮 -->
+<div id="top-toast" class="top-toast hidden"></div>
+<button id="feedback-entry" class="feedback-entry" type="button" aria-label="意见反馈">
+  <img class="feedback-entry-image" src="static/images/feedback-entry.png" alt="意见反馈" />
+</button>
+
+<!-- 意见反馈弹窗 -->
+<div id="dialog-backdrop" class="dialog-backdrop hidden">
+  <section class="feedback-dialog" aria-modal="true" role="dialog">
+    <header class="dialog-header">
+      <h2>意见反馈</h2>
+      <button id="close-dialog" class="icon-close" type="button" aria-label="关闭">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path
+            d="M6 6 18 18M18 6 6 18"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-width="1.8"
+          />
+        </svg>
+      </button>
+    </header>
+
+    <div class="dialog-body">
+      <p class="intro-text">
+        感谢您使用一致性评估智能体服务！为持续优化产品体验，您的反馈对我们至关重要。
+        我们将认真对待每一条建议，并尽快处理。
+      </p>
+
+      <!-- 隐藏智能体选择 -->
+      <div class="select-shell hidden">
+        <select id="agent">
+          <option>一致性评估智能体</option>
+        </select>
+      </div>
+
+      <label class="field-label" for="description">问题 / 建议描述</label>
+      <div class="textarea-shell" id="description-shell">
+        <textarea
+          id="description"
+          maxlength="300"
+          placeholder="请详细描述您遇到的问题或改进建议（如：出现场景、操作步骤、预期效果等）"
+        ></textarea>
+        <span id="counter" class="counter">0/300</span>
+      </div>
+      <p id="description-error" class="error-text hidden"></p>
+
+      <label class="field-label">图片上传</label>
+      <div class="upload-block" id="upload-block">
+        <button id="upload-trigger" class="upload-button" type="button">
+          <img src="static/images/feedback-folder-opened.png" alt="" aria-hidden="true" />
+          <span>上传图片</span>
+        </button>
+        <span class="upload-tip">或将图片拖拽到这里，单张最大 5MB</span>
+        <input
+          id="file-input"
+          class="hidden-input"
+          type="file"
+          multiple
+          accept="image/*"
+        />
+        <div id="file-list" class="file-list hidden"></div>
+      </div>
+      <p id="attachments-error" class="error-text hidden"></p>
+
+      <label class="field-label" for="contact">联系方式（手机号 / 邮箱，可选）</label>
+      <input
+        id="contact"
+        class="text-input"
+        type="text"
+        placeholder="如需我们跟进回复，请留下您的联系方式（将严格保密）"
+      />
+      <p id="contact-error" class="error-text hidden"></p>
+
+      <p id="success-text" class="success-text hidden"></p>
+    </div>
+
+    <footer class="dialog-footer">
+      <button id="submit-button" class="primary-button" type="button">提交</button>
+      <button id="cancel-button" class="secondary-button" type="button">取消</button>
+    </footer>
+  </section>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    // 注意: DEFAULT_API_BASE 和 ClaimConsistencyConfig 已在 config.js 中定义
+
+    // ============================================================================
+    // 认证初始化
+    // ============================================================================
+
+    // 初始化认证管理器（本地测试通过 hosts 将 nstl.gov.cn 指向 127.0.0.1）
+    window.authManager = new AuthManager({
+      loginServiceUrl: 'https://login.nstl.gov.cn',
+      sessionTimeout: 24 * 60 * 60 * 1000,
+      storageKey: 'cca_user_session',
+      trustedOrigins: ['https://login.nstl.gov.cn'],
+      enableDevMode: false
+    });
+
+    // Vue 应用实例（延迟初始化）
+    let vueApp = null;
+
+    // 初始化 Vue 应用的函数
+    function initVueApp() {
+      if (vueApp) {
+        console.warn('[Auth] Vue app already initialized');
+        return;
+      }
+
+      vueApp = createApp({
+      data() {
+        return {
+          form: {
+            topic: '',
+            researchType: '综合评估',
+            reportLength: '详细',
+            yearStart: 2020,
+            yearEnd: new Date().getFullYear(),  // 动态设置为当前年份
+            languagePref: '中英混合'
+          },
+          // 验证错误状态
+          validationErrors: {
+            topic: '',           // 主题验证错误信息
+            yearRange: '',       // 年份范围验证错误信息
+            files: ''            // 文件验证错误信息
+          },
+          isLoading: false,
+          currentYear: new Date().getFullYear(),  // 当前年份（用于动态限制）
+          // File upload related
+          isDragOver: false,
+          isUploading: false,
+          isParsing: false,
+          uploadedFiles: [],
+          uploadingFiles: [],
+          fileParser: new FileParserService(),
+          maxFileSize: 50 * 1024 * 1024,
+          maxFileCount: 10,
+          allowedTypes: ['.pdf', '.txt', '.md'],
+          // Toast notifications
+          toasts: [],
+          toastIdCounter: 0,
+          // 安全确认弹窗状态
+          showSecurityWarning: false,
+          // 待处理的上传操作
+          pendingUploadAction: null,
+          // 跳过安全检查标志（用于确认后直接打开文件选择）
+          skipSecurityCheck: false,
+          // 限流警告弹窗状态
+          showRateLimitWarning: false,
+          rateLimitMessage: '当前正在执行的任务太多啦，稍后再试',
+          // 顶栏当前账号
+          currentUser: null,
+          isAuthenticated: false
+        };
+      },
+      computed: {
+        accountDisplayName() {
+          if (!this.isAuthenticated) return '未登录';
+          const user = this.currentUser || this.getDisplayUser();
+          return user?.username || user?.userId || 'NSTL用户';
+        },
+
+        accountTitle() {
+          if (!this.isAuthenticated) return '点击登录';
+          const user = this.currentUser || this.getDisplayUser();
+          return `当前用户：${user?.username || user?.userId || 'NSTL用户'}`;
+        }
+      },
+      methods: {
+        getDisplayUser() {
+          if (window.authManager?.getDisplayUserInfo) {
+            return window.authManager.getDisplayUserInfo();
+          }
+          return { userId: 'nstl_user', username: 'NSTL用户', email: '', isFallback: true };
+        },
+
+        syncCurrentUser() {
+          const authenticated = window.authManager?.isAuthenticated?.() ?? false;
+          this.isAuthenticated = authenticated;
+          this.currentUser = authenticated ? this.getDisplayUser() : null;
+        },
+
+        handleAccountChipClick() {
+          this.syncCurrentUser();
+          if (this.isAuthenticated) return;
+          window.authManager?.showLoginModal();
+        },
+
+        /**
+         * 验证研究主题
+         * @returns {boolean} 是否通过验证
+         */
+        validateTopic() {
+          const topic = this.form.topic;
+
+          if (!topic || topic.trim().length === 0) {
+            this.validationErrors.topic = '请输入研究主题';
+            return false;
+          }
+
+          if (topic.trim().length < 5) {
+            this.validationErrors.topic = '研究主题至少需要5个字符';
+            return false;
+          }
+
+          this.validationErrors.topic = '';
+          return true;
+        },
+
+        /**
+         * 显示 Toast 通知
+         * @param {string} message - 通知消息
+         * @param {string} type - 通知类型: 'success', 'error', 'warning', 'info'
+         * @param {number} duration - 显示时长（毫秒），默认 3000ms
+         */
+        showToast(message, type = 'info', duration = 3000) {
+          const id = this.toastIdCounter++;
+          const toast = { id, message, type };
+          this.toasts=[];
+          this.toasts.push(toast);
+          const dialog = document.getElementById('demoDialog');
+          dialog.classList.add('is-open');
+         
+
+          // setTimeout(() => {
+          //   const index = this.toasts.findIndex(t => t.id === id);
+          //   if (index !== -1) {
+          //     this.toasts.splice(index, 1);
+          //   }
+          // }, duration);
+        },
+
+        /**
+         * 获取 Toast 图标
+         * @param {string} type - Toast 类型
+         * @returns {string} Material Icon 名称
+         */
+        getToastIcon(type) {
+          const iconMap = {
+            'success': 'check_circle',
+            'error': 'error',
+            'warning': 'warning',
+            'info': 'info'
+          };
+          return iconMap[type] || 'info';
+        },
+
+        /**
+         * 验证文献年份范围
+         * @returns {boolean} 是否通过验证
+         */
+        validateYearRange() {
+          const { yearStart, yearEnd } = this.form;
+          const currentYear = this.currentYear;
+
+          if (!yearStart || !yearEnd) {
+            this.validationErrors.yearRange = '请输入完整的年份范围';
+            return false;
+          }
+
+          if (yearStart < 1900) {
+            this.validationErrors.yearRange = '开始年份不得小于1900';
+            return false;
+          }
+
+          if (yearStart > currentYear) {
+            this.validationErrors.yearRange = `开始年份不得超过当前年份(${currentYear})`;
+            return false;
+          }
+
+          if (yearEnd < 1900) {
+            this.validationErrors.yearRange = '结束年份不得小于1900';
+            return false;
+          }
+
+          if (yearEnd > currentYear) {
+            this.validationErrors.yearRange = `结束年份不得超过当前年份(${currentYear})`;
+            return false;
+          }
+
+          if (yearStart > yearEnd) {
+            this.validationErrors.yearRange = '开始年份不能大于结束年份';
+            return false;
+          }
+
+          this.validationErrors.yearRange = '';
+          return true;
+        },
+
+        /**
+         * 验证上传的文件
+         * @returns {boolean} 是否通过验证
+         */
+        validateFiles() {
+          const errorFiles = this.uploadedFiles.filter(f => f.status === 'error');
+
+          if (errorFiles.length > 0) {
+            const fileNames = errorFiles.map(f => f.name).join('、');
+            this.validationErrors.files = `以下文件解析失败，请删除后重试：${fileNames}`;
+            return false;
+          }
+
+          this.validationErrors.files = '';
+          return true;
+        },
+
+        /**
+         * 主题输入时实时验证
+         */
+        onTopicInput() {
+          if (this.validationErrors.topic) {
+            this.validateTopic();
+          }
+        },
+
+        /**
+         * 年份输入时实时验证
+         */
+        onYearInput() {
+          if (this.validationErrors.yearRange) {
+            this.validateYearRange();
+          }
+        },
+
+        getApiBase() {
+          return ClaimConsistencyConfig.getApiBase();
+        },
+
+        setApiBase(base) {
+          if (base) {
+            localStorage.setItem("claim_consistency_api_base", base);
+          }
+        },
+
+        getUserScope() {
+          const userId = window.authManager?.sessionManager?.getSession()?.user?.userId;
+          if (userId && userId !== 'mock_user_id' && userId !== 'unknown' && userId !== 'default') {
+            return userId;
+          }
+          return 'default';
+        },
+
+        buildInputParts() {
+          const parsedFiles = this.uploadedFiles
+            .filter(f => f.status === 'parsed')
+            .map(f => ({
+              file_id: f.fileId,
+              name: f.name,
+              url: f.url,
+              type: f.type,
+              // 不包含 content，减少 payload 大小
+              // content 将在任务详情页中从后端加载
+              size: f.size,
+            }));
+
+          return {
+            topic: this.form.topic.trim(),
+            structured: {
+              research_type: this.form.researchType,  // 传递用户选择的研究类型
+              report_length: this.form.reportLength,  // 传递用户选择的报告长度
+              year_range: [this.form.yearStart, this.form.yearEnd],
+              language_pref: this.form.languagePref,
+              uploaded_files: parsedFiles,
+            },
+          };
+        },
+
+        async createRun(threadId, payload, userScope = this.getUserScope()) {
+          const apiBase = this.getApiBase();
+          const body = {
+            input: [
+              {
+                type: "message",
+                role: "user",
+                content: [
+                  { type: "input_text", text: payload.topic },
+                  { type: "input_json", json: payload.structured },
+                ],
+              },
+            ],
+          };
+
+          const resp = await fetch(`${this.getApiBase()}/v1/threads/${threadId}/runs`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-User-Scope": userScope,
+            },
+            body: JSON.stringify(body),
+          });
+
+          if (!resp.ok) {
+            throw new Error(await resp.text());
+          }
+          return resp.json();
+        },
+
+        persistRun(threadId, runId) {
+          localStorage.setItem("claim_consistency_thread_id", threadId);
+          localStorage.setItem("claim_consistency_run_id", runId);
+        },
+
+        // File Upload Methods
+        syncSecurityWarningDisplay() {
+          const overlay = document.getElementById('securityWarningOverlay');
+          if (overlay) {
+            overlay.style.display = this.showSecurityWarning ? 'flex' : 'none';
+          }
+        },
+
+        showSecurityWarningModal(actionType, files = null) {
+          console.log('[Security] 显示安全警告弹窗, 操作类型:', actionType);
+
+          // 缓存待处理的操作
+          this.pendingUploadAction = {
+            type: actionType,  // 'click' 或 'drop'
+            files: files
+          };
+
+          // 显示弹窗
+          this.showSecurityWarning = true;
+          this.syncSecurityWarningDisplay();
+          $('')
+          console.log('[Security] 弹窗状态已设置为 true');
+        },
+
+        confirmSecurityWarning() {
+          console.log('[Security] 用户点击同意按钮');
+
+          // 保存待处理操作的引用
+          const action = this.pendingUploadAction;
+
+          // 先清空待处理操作和关闭弹窗
+          this.pendingUploadAction = null;
+          this.showSecurityWarning = false;
+          this.syncSecurityWarningDisplay();
+          console.log('[Security] 弹窗状态已设置为 false');
+
+          // 根据操作类型继续原有流程
+          if (action) {
+            console.log('[Security] 待处理操作类型:', action.type);
+            if (action.type === 'click') {
+              // 点击上传：设置跳过标志，然后直接触发文件输入框
+              console.log('[Security] 设置跳过标志并直接触发文件输入框');
+              this.skipSecurityCheck = true;
+              // 使用 setTimeout 确保在下一个事件循环中执行
+              setTimeout(() => {
+                console.log('[Security] 执行文件输入框点击');
+                this.$refs.fileInput.click();
+                // 重置标志
+                this.skipSecurityCheck = false;
+              }, 0);
+            } else if (action.type === 'drop') {
+              // 拖拽上传：直接处理文件
+              const files = action.files;
+              if (files && files.length > 0) {
+                console.log('[Security] 处理拖拽文件:', files.length);
+                this.processFiles(files);
+              }
+            }
+          }
+        },
+
+        cancelSecurityWarning() {
+          // 关闭弹窗
+          this.showSecurityWarning = false;
+          this.syncSecurityWarningDisplay();
+
+          // 清空待处理操作（取消上传）
+          this.pendingUploadAction = null;
+        },
+
+        triggerFileInput() {
+          console.log('[Security] triggerFileInput 被调用, skipSecurityCheck:', this.skipSecurityCheck, 'showSecurityWarning:', this.showSecurityWarning);
+          
+          // ✅ 优先检查弹窗状态（防止弹窗关闭后立即重新打开）
+          if (this.showSecurityWarning) {
+            console.log('[Security] 弹窗已显示，忽略重复点击');
+            return;
+          }
+          
+          // ✅ 检查跳过标志（确认后直接打开文件选择器）
+          if (this.skipSecurityCheck) {
+            console.log('[Security] 检测到跳过标志，直接返回');
+            return;
+          }
+          
+          // ✅ 异步检查登录状态（主动同步主系统状态）
+          this.checkLoginStatus().then(isLoggedIn => {
+            if (!isLoggedIn) {
+              console.log('[Auth] User not logged in or main system logout detected, showing login modal');
+              window.authManager.showLoginModal();
+              return;
+            }
+            
+            // 登录状态有效，继续执行文件上传逻辑
+            if (this.uploadedFiles.length >= this.maxFileCount) {
+              this.showToast(`最多上传 ${this.maxFileCount} 个文件，请先删除部分文件后再添加`, 'warning');
+              return;
+            }
+
+            // 显示安全确认弹窗
+            this.showSecurityWarningModal('click');
+          });
+        },
+
+        handleDragEnter(e) {
+          this.isDragOver = true;
+        },
+
+        handleDragLeave(e) {
+          this.isDragOver = false;
+        },
+
+        handleDrop(e) {
+          this.isDragOver = false;
+          
+          // ✅ 新增: 异步检查登录状态（主动同步主系统状态）
+          this.checkLoginStatus().then(isLoggedIn => {
+            if (!isLoggedIn) {
+              console.log('[Auth] User not logged in or main system logout detected, showing login modal');
+              window.authManager.showLoginModal();
+              return;
+            }
+            
+            // 登录状态有效，继续执行拖拽上传逻辑
+            // 如果弹窗已显示，忽略重复拖拽
+            if (this.showSecurityWarning) return;
+
+            if (this.uploadedFiles.length >= this.maxFileCount) {
+              this.showToast(`最多上传 ${this.maxFileCount} 个文件，请先删除部分文件后再添加`, 'warning');
+              return;
+            }
+
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) {
+              // 先显示安全确认弹窗
+              this.showSecurityWarningModal('drop', files);
+            }
+          });
+        },
+
+        handleFileSelect(e) {
+          const files = Array.from(e.target.files);
+          this.processFiles(files);
+          // Reset input to allow selecting the same file again
+          e.target.value = '';
+        },
+
+        validateFile(file) {
+          // 检查 0KB 文件
+          if (file.size === 0) {
+            this.showToast(`文件 "${file.name}" 为空文件（0KB），无法上传`, 'error');
+            return false;
+          }
+
+          if (file.size > this.maxFileSize) {
+            this.showToast(`文件 "${file.name}" 超过 50MB 限制`, 'error');
+            return false;
+          }
+
+          const ext = '.' + file.name.split('.').pop().toLowerCase();
+          if (!this.allowedTypes.includes(ext)) {
+            this.showToast(`文件 "${file.name}" 格式不支持，请上传 PDF、TXT、Markdown 格式文件`, 'error');
+            return false;
+          }
+
+          // 检查重复文件：使用文件名 + 大小 + 最后修改时间
+          const fileSignature = `${file.name}_${file.size}_${file.lastModified}`;
+          const isDuplicate = this.uploadedFiles.some(f => {
+            const existingSignature = `${f.name}_${f.size}_${f.lastModified || ''}`;
+            return fileSignature === existingSignature;
+          });
+
+          if (isDuplicate) {
+            this.showToast(`文件 "${file.name}" 已存在，请勿重复上传`, 'warning');
+            return false;
+          }
+
+          return true;
+        },
+
+        async processFiles(files) {
+          const remaining = this.maxFileCount - this.uploadedFiles.length;
+          if (remaining <= 0) {
+            this.showToast(`最多上传 ${this.maxFileCount} 个文件，请先删除部分文件后再添加`, 'warning');
+            return;
+          }
+
+          const validFiles = files.filter(file => this.validateFile(file));
+          if (validFiles.length === 0) return;
+
+          let toUpload = validFiles;
+          if (validFiles.length > remaining) {
+            this.showToast(
+              `本次最多可添加 ${remaining} 个文件，已忽略其余 ${validFiles.length - remaining} 个`,
+              'warning'
+            );
+            toUpload = validFiles.slice(0, remaining);
+          }
+
+          await this.uploadFiles(toUpload);
+        },
+
+        async uploadFiles(files) {
+<!--            debugger;-->
+          this.isUploading = true;
+          this.uploadingFiles = files.map(file => ({
+            name: file.name,
+            size: file.size,
+            progress: 0
+          }));
+
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            try {
+              this.uploadedFiles.push({
+                name: file.name,
+                size: file.size,
+                type: this._getFileType(file.name),
+                status: 'uploading',
+                url: null,
+                lastModified: file.lastModified  // 保存最后修改时间用于重复检测
+              });
+
+              this.simulateProgress(i);
+
+              const formData = new FormData();
+              formData.append('file', file);
+
+              const response = await fetch(`${this.getApiBase()}/v1/files/upload`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-User-Scope': this.getUserScope()
+                }
+              });
+
+              if (!response.ok) {
+                // 解析错误响应
+                let errorResult = {};
+                try {
+                  errorResult = await response.json();
+                } catch (e) {
+                  // 无法解析JSON，使用默认错误信息
+                  errorResult = { detail: `上传失败: ${response.statusText}` };
+                }
+                
+                // 更新进度为100%（无论成功还是失败）
+                this.uploadingFiles[i].progress = 100;
+                
+                const fileIndex = this.uploadedFiles.findIndex(f => f.name === file.name && f.status === 'uploading');
+                const detailMessage = errorResult.detail || errorResult.message || '文件上传或解析失败';
+                if (fileIndex !== -1) {
+                  const updatedFile = {
+                    ...this.uploadedFiles[fileIndex],
+                    status: 'error',
+                    error: detailMessage,
+                    errorCode: errorResult.code || 'upload_failed'
+                  };
+                  this.uploadedFiles.splice(fileIndex, 1, updatedFile);
+                } else {
+                  console.warn('[Upload] 未找到对应文件:', file.name);
+                }
+                continue;
+              }
+
+              const result = await response.json();
+
+              const fileIndex = this.uploadedFiles.findIndex(f => f.name === file.name && f.status === 'uploading');
+              if (fileIndex !== -1) {
+                this.uploadedFiles[fileIndex].status = 'parsed';
+                this.uploadedFiles[fileIndex].url = result.url || result.fileUrl;
+                this.uploadedFiles[fileIndex].fileId = result.id || result.fileId;
+                this.uploadedFiles[fileIndex].parsedAt = result.parsedAt;
+                this.uploadedFiles[fileIndex].contentSize = result.content_size || 0;
+                this.uploadedFiles[fileIndex].truncated = Boolean(result.truncated);
+              }
+
+              this.uploadingFiles[i].progress = 100;
+
+            } catch (error) {
+              console.error('Upload error:', error);
+
+              // 更新进度为100%
+              this.uploadingFiles[i].progress = 100;
+
+              const fileIndex = this.uploadedFiles.findIndex(f => f.name === file.name && f.status === 'uploading');
+              if (fileIndex !== -1) {
+                // 使用Vue的splice方法触发响应式更新
+                const updatedFile = {
+                  ...this.uploadedFiles[fileIndex],
+                  status: 'error',
+                  error: '解析失败',
+                  errorCode: 'upload_error'
+                };
+                this.uploadedFiles.splice(fileIndex, 1, updatedFile);
+                console.log('[Upload] 文件状态已更新（catch块）:', this.uploadedFiles[fileIndex]);
+              } else {
+                console.warn('[Upload] 未找到对应文件（catch块）:', file.name);
+              }
+              
+              // 不调用showToast，不弹出提示框，继续处理下一个文件
+            }
+          }
+
+          setTimeout(() => {
+            this.isUploading = false;
+            this.uploadingFiles = [];
+          }, 500);
+        },
+
+        async parseFilesLocally(fileUrlList) {
+          if (!fileUrlList || fileUrlList.length === 0) return;
+
+          this.isParsing = true;
+          const parsedFiles = [];
+
+          try {
+            for (const { file, url, fileId } of fileUrlList) {
+              try {
+                const fileIndex = this.uploadedFiles.findIndex(f => f.name === file.name);
+                if (fileIndex !== -1) {
+                  this.uploadedFiles[fileIndex].status = 'parsing';
+                }
+
+                const parsed = await this.fileParser.parseFile(file);
+                parsed.url = url;
+                parsed.fileId = fileId;
+
+                parsedFiles.push(parsed);
+
+                if (fileIndex !== -1) {
+                  this.uploadedFiles[fileIndex].status = 'parsed';
+                  this.uploadedFiles[fileIndex].fileId = fileId;
+                  this.uploadedFiles[fileIndex].content = parsed.content;
+                  this.uploadedFiles[fileIndex].parsedAt = parsed.parsedAt;
+                }
+
+              } catch (error) {
+                console.error(`解析失败 ${file.name}:`, error);
+                const idx = this.uploadedFiles.findIndex(f => f.name === file.name);
+                if (idx !== -1) {
+                  this.uploadedFiles[idx].status = 'error';
+                  this.uploadedFiles[idx].error = error.message;
+                }
+              }
+            }
+
+            // 尝试保存解析后的文件
+            try {
+              await this.fileParser.saveParsedFiles(parsedFiles.map(f => ({
+                fileId: f.fileId,
+                name: f.name,
+                type: f.type,
+                content: f.content,
+                size: f.size,
+                parsedAt: f.parsedAt,
+                url: f.url,
+              })));
+            } catch (saveError) {
+              console.error('保存解析文件失败:', saveError);
+
+              // 判断错误类型，显示不同的错误信息
+              let errorMessage = '文件保存失败';
+              if (saveError.message.includes('后端存储服务暂时不可用')) {
+                errorMessage = '后端存储服务暂时不可用，请联系管理员';
+              } else if (saveError.message.includes('超出浏览器存储限制')) {
+                errorMessage = '文件内容过大，超出存储限制';
+              }
+
+              // 只标记本次新解析的文件为错误状态
+              parsedFiles.forEach(parsed => {
+                const idx = this.uploadedFiles.findIndex(f => f.fileId === parsed.fileId);
+                if (idx !== -1) {
+                  this.uploadedFiles[idx].status = 'error';
+                  this.uploadedFiles[idx].error = errorMessage;
+                }
+              });
+              // 触发文件验证，显示错误提示
+              this.validateFiles();
+            }
+          } finally {
+            // 确保无论成功或失败都重置解析状态
+            this.isParsing = false;
+          }
+        },
+
+        simulateProgress(fileIndex) {
+          let progress = 0;
+          const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress >= 90) {
+              progress = 90;
+              clearInterval(interval);
+            }
+            if (this.uploadingFiles[fileIndex]) {
+              this.uploadingFiles[fileIndex].progress = Math.min(Math.round(progress), 90);
+            }
+          }, 200);
+        },
+
+        removeFile(index) {
+          // ✅ 新增: 删除文件前验证登录状态（异步）
+          this.checkLoginStatus().then(isLoggedIn => {
+            if (!isLoggedIn) {
+              console.log('[Auth] User not logged in or main system logout detected, showing login modal');
+              window.authManager.showLoginModal();
+              return;
+            }
+            
+            // 登录状态有效，继续删除文件
+            this.uploadedFiles.splice(index, 1);
+            const remaining = this.uploadedFiles.filter(f => f.status === 'parsed');
+
+            // 异步保存
+            this.fileParser.saveParsedFiles(remaining).catch(err => {
+              console.error('保存文件列表失败:', err);
+            });
+
+            // 删除文件后重新验证
+            if (this.validationErrors.files) {
+              this.validateFiles();
+            }
+          });
+        },
+
+        _getFileType(fileName) {
+          const ext = fileName.split('.').pop().toLowerCase();
+          if (ext === 'pdf') return 'pdf';
+          if (ext === 'txt') return 'txt';
+          if (ext === 'md' || ext === 'markdown') return 'md';
+          return ext;
+        },
+
+        formatFileSize(bytes) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        },
+
+        getFileIcon(type) {
+          const iconMap = {
+            'pdf': 'picture_as_pdf',
+            'doc': 'article',
+            'docx': 'article',
+            'txt': 'text_snippet',
+            'md': 'description',  // 使用 description 图标代替不存在的 markdown
+            'zip': 'folder_zip',
+            'rar': 'folder_zip'
+          };
+          return iconMap[type] || 'insert_drive_file';
+        },
+
+        getFileIconColor(type) {
+          const colorMap = {
+            'pdf': '#ef4444',
+            'doc': '#3b82f6',
+            'docx': '#3b82f6',
+            'txt': '#6b7280',
+            'md': '#10b981',
+            'zip': '#f59e0b',
+            'rar': '#f59e0b'
+          };
+          return colorMap[type] || '#6b7280';
+        },
+
+        async handleSubmit() {
+          // ✅ 新增: 执行前检查登录状态（主动同步主系统状态）
+          const isLoggedIn = await this.checkLoginStatus();
+          if (!isLoggedIn) {
+            console.log('[Auth] User not logged in or main system logout detected, showing login modal');
+            window.authManager.showLoginModal();
+            return;
+          }
+          
+          // 执行所有验证
+          const isTopicValid = this.validateTopic();
+          const isYearRangeValid = this.validateYearRange();
+          const isFilesValid = this.validateFiles();
+
+          // 如果有任何验证失败，阻止提交
+          if (!isTopicValid || !isYearRangeValid || !isFilesValid) {
+            return;
+          }
+
+          const apiBase = this.getApiBase();
+          this.setApiBase(apiBase);
+
+          const payload = this.buildInputParts();
+          const threadId = `thread_${Date.now()}`;
+          const userScope = this.getUserScope();
+
+          // 设置加载状态
+          this.isLoading = true;
+
+          try {
+            // 直接调用后端 API 创建 run（不使用 localStorage 存储 payload）
+            const result = await this.createRun(threadId, payload, userScope);
+            const runId = result.run_id || result.id || "";
+
+            // 先清理所有旧的 consistency 相关数据（避免配额超限）
+            try {
+              Object.keys(localStorage)
+                .filter(key => key.startsWith('claim_consistency_'))
+                .forEach(key => localStorage.removeItem(key));
+            } catch (e) {
+              console.warn('清理 localStorage 失败:', e);
+            }
+
+            // 只保存最必要的数据到 localStorage
+            // 如果 localStorage 写入失败，仍然继续跳转（因为 run 已经创建成功）
+            try {
+              localStorage.setItem("claim_consistency_pending_thread_id", threadId);
+              localStorage.setItem("claim_consistency_pending_run_id", runId);
+              localStorage.setItem("claim_consistency_pending_topic", this.form.topic.trim().substring(0, 200)); // 限制长度
+              localStorage.setItem("claim_consistency_pending_status", (result.status || "").substring(0, 50)); // 限制长度
+              localStorage.setItem("claim_consistency_pending_user_scope", userScope);
+              // ✅ 新增：保存 research_type 和 report_length
+              localStorage.setItem("claim_consistency_pending_research_type", this.form.researchType || "综合评估");
+              localStorage.setItem("claim_consistency_pending_report_length", this.form.reportLength || "详细");
+            } catch (storageError) {
+              console.warn('保存到 localStorage 失败，但任务已创建成功:', storageError);
+              // 即使 localStorage 失败，也继续跳转
+            }
+
+            // 创建成功后直接进入任务详情页，旧 flow.html 仅保留为历史参考页面
+            window.location.href = `task_detail.html?task_id=${encodeURIComponent(runId)}&thread_id=${encodeURIComponent(threadId)}`;
+          } catch (error) {
+            console.error('创建任务失败:', error);
+            
+            // ✅ 新增: 检测认证失败错误
+            if (error.message && (error.message.includes('Unauthorized') || error.message.includes('401'))) {
+              console.log('[Auth] Authentication failed during task creation');
+              window.authManager.showLoginModal();
+              this.isLoading = false;
+              return;
+            }
+
+            // ========== 新增：检测限流错误并显示弹窗 ==========
+            try {
+              // 尝试解析错误响应
+              const errorText = error.message || error.toString();
+              const errorData = JSON.parse(errorText);
+
+              // 检测限流错误
+              if (errorData.error && errorData.error.code === 'rate_limit_exceeded') {
+                // 显示限流警告弹窗
+                this.showRateLimitWarningModal(errorData.error.message);
+                this.isLoading = false;
+                return; // 不显示 Toast，直接返回
+              }
+            } catch (parseError) {
+              // 解析失败，继续显示通用错误提示
+              console.warn('解析错误响应失败:', parseError);
+            }
+            // ================================================
+
+            // 显示通用错误提示
+            this.showToast('创建任务失败，请重试', 'error', 4000);
+            this.isLoading = false;
+          }
+        },
+
+        handleSecurityWarningKeydown(e) {
+          if (!this.showSecurityWarning) return;
+
+          if (e.key === 'Escape') {
+            // ESC 键关闭弹窗
+            this.cancelSecurityWarning();
+          } else if (e.key === 'Enter') {
+            // Enter 键确认
+            this.confirmSecurityWarning();
+          }
+        },
+
+        /**
+         * 显示限流警告弹窗
+         * @param {string} message - 错误消息
+         */
+        showRateLimitWarningModal(message) {
+          console.log('[RateLimit] 显示限流警告弹窗');
+          this.rateLimitMessage = message || '当前正在执行的任务太多啦，稍后再试';
+          this.showRateLimitWarning = true;
+          this.syncRateLimitWarningDisplay();
+        },
+
+        /**
+         * 同步限流警告弹窗显示状态
+         */
+        syncRateLimitWarningDisplay() {
+          const overlay = document.getElementById('rateLimitWarningOverlay');
+          if (overlay) {
+            overlay.style.display = this.showRateLimitWarning ? 'flex' : 'none';
+          }
+        },
+
+        /**
+         * 确认限流警告（关闭弹窗）
+         */
+        confirmRateLimitWarning() {
+          console.log('[RateLimit] 用户点击确认按钮');
+          this.showRateLimitWarning = false;
+          this.syncRateLimitWarningDisplay();
+        },
+
+        /**
+         * 取消限流警告（点击遮罩层关闭）
+         */
+        cancelRateLimitWarning() {
+          this.showRateLimitWarning = false;
+          this.syncRateLimitWarningDisplay();
+        },
+
+        /**
+         * 处理限流警告弹窗键盘事件
+         * @param {KeyboardEvent} e
+         */
+        handleRateLimitWarningKeydown(e) {
+          if (!this.showRateLimitWarning) return;
+
+          if (e.key === 'Escape') {
+            this.cancelRateLimitWarning();
+          } else if (e.key === 'Enter') {
+            this.confirmRateLimitWarning();
+          }
+        },
+        
+        /**
+         * ✅ 新增: 检查登录状态（异步方法，主动同步主系统状态）
+         * @returns {Promise<boolean>} 用户是否已登录
+         */
+        async checkLoginStatus() {
+          // 检查 authManager 是否存在
+          if (!window.authManager) {
+            console.warn('[Auth] authManager not initialized');
+            return false;
+          }
+          
+          // ✅ 调用 checkAuth() 进行状态同步检查（会主动验证主系统登录状态）
+          return await window.authManager.checkAuth();
+        },
+        
+        /**
+         * ✅ 新增: 查看报告样例（验证登录状态）
+         * @param {string} reportTitle - 报告标题
+         */
+        async viewReportSample(reportTitle) {
+          // 检查登录状态
+          const isLoggedIn = await this.checkLoginStatus();
+          if (!isLoggedIn) {
+            console.log('[Auth] User not logged in or main system logout detected, showing login modal');
+            window.authManager.showLoginModal();
+            return;
+          }
+          
+          // 登录状态有效，跳转到任务详情页
+          // window.location.href = `task_detail.html?report=${encodeURIComponent(reportTitle)}`;
+          window.location.href = `task_detail.html?task_id=${encodeURIComponent(reportTitle)}`;
+        },
+        
+        /**
+         * ✅ 新增: 查看任务列表（验证登录状态）
+         */
+        async viewTaskHistory() {
+          // 检查登录状态
+          const isLoggedIn = await this.checkLoginStatus();
+          if (!isLoggedIn) {
+            console.log('[Auth] User not logged in or main system logout detected, showing login modal');
+            window.authManager.showLoginModal();
+            return;
+          }
+          
+          // 登录状态有效，跳转到任务历史页
+          window.location.href = 'history.html';
+        },
+        
+        closeDialog() {
+          const dialog = document.getElementById('demoDialog');
+          if (!dialog) return;
+          // 原生 addEventListener 不支持传入选择器（'#id'）作为第二参数；
+          // 这里使用事件委托统一处理关闭/确认/取消按钮点击。
+          dialog.addEventListener('click', (e) => {
+            const target = e.target;
+            if (!(target instanceof Element)) return;
+            const hit = target.closest('#demoDialogClose, #demoDialogConfirm, #demoDialogCancel');
+            if (!hit) return;
+            dialog.classList.remove('is-open');
+          });
+        }
+      },
+      mounted() {
+        this.syncCurrentUser();
+        // 初始化安全弹窗显示状态
+        this.syncSecurityWarningDisplay();
+        this.closeDialog();
+        window.addEventListener('authSuccess', this.syncCurrentUser);
+        window.addEventListener('authLogout', this.syncCurrentUser);
+        // 监听键盘事件
+        document.addEventListener('keydown', this.handleSecurityWarningKeydown);
+        // 监听限流警告弹窗键盘事件
+        document.addEventListener('keydown', this.handleRateLimitWarningKeydown);
+      },
+      beforeUnmount() {
+        window.removeEventListener('authSuccess', this.syncCurrentUser);
+        window.removeEventListener('authLogout', this.syncCurrentUser);
+        // 清理事件监听
+        document.removeEventListener('keydown', this.handleSecurityWarningKeydown);
+        // 清理限流警告弹窗事件监听
+        document.removeEventListener('keydown', this.handleRateLimitWarningKeydown);
+      }
+    });
+
+    // 挂载 Vue 应用到 #app
+    vueApp.mount('#app');
+    console.log('[Auth] Vue app mounted to #app');
+
+    // 移除加载遮罩层
+    removeLoadingOverlay();
+    }
+
+    // ============================================================================
+    // 认证流程
+    // ============================================================================
+
+    // 移除加载遮罩层的函数
+    function removeLoadingOverlay() {
+      const overlay = document.getElementById('pageLoadingOverlay');
+      if (overlay) {
+        overlay.classList.add('fade-out');
+        setTimeout(() => {
+          overlay.remove();
+        }, 300);
+      }
+    }
+
+    // ✅ 修改: 页面加载时先检查认证（主动同步主系统状态），再初始化 Vue
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('[Auth] Checking authentication status...');
+      
+      // ✅ 优先检查认证状态（会主动验证主系统登录状态）
+      const isAuthenticated = await authManager.checkAuth();
+      
+      if (!isAuthenticated) {
+        // 未认证: 显示登录窗口
+        console.log('[Auth] User not authenticated, showing login modal');
+        
+        // ✅ 新增: 显示加载遮罩层,防止用户操作
+        const overlay = document.getElementById('pageLoadingOverlay');
+        if (overlay) {
+          overlay.querySelector('.loading-text').textContent = '请先登录...';
+          overlay.style.display = 'flex';
+        }
+        
+        authManager.showLoginModal();
+      } else {
+        // 已认证: 初始化 Vue 应用
+        console.log('[Auth] User authenticated, initializing Vue app');
+        initVueApp();
+      }
+    });
+
+    // ✅ 监听登录成功事件
+    window.addEventListener('authSuccess', (event) => {
+      console.log('[Auth] Authentication successful', event.detail);
+      
+      // 移除加载遮罩层
+      removeLoadingOverlay();
+      
+      // 初始化 Vue 应用
+      initVueApp();
+    });
+    
+    // ✅ 监听登录关闭事件(用户关闭登录窗口)
+    window.addEventListener('authLoginClosed', (event) => {
+      console.log('[Auth] Login modal closed by user');
+      
+      // 移除加载遮罩层
+      removeLoadingOverlay();
+      
+      // 初始化 Vue 应用(允许用户浏览,但操作时会再次提示登录)
+      initVueApp();
+    });
+    initVueApp();
+</script>
+<style>
+  .ai-tip {
+    font-size: 14px;
+    margin-top: -10px;
+    color: #A2B4D0;
+  }
+  .submit-btn{
+    margin-top: 25px;
+    position: relative;
+  }
+  .await-tip{
+    width: 282px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    background-color: #f5f5e5;
+    border-radius: 12px;
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    font-size: 12px;
+    color: #999173;
+    font-weight: initial;
+  }
+</style>
+    <!-- 意见反馈脚本 -->
+    <script src="static/js/feedback.js"></script>
+</body>
+</html>

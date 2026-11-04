@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>任务历史 - 一致性评估智能体</title>
+    <!-- Favicon - 使用 data URI 避免 404 错误 -->
+    <link rel="icon" href="static/images/favicon.ico">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="static/css/feedback.css" />
+    <!-- Vue 3 - 本地版本 -->
+    <script src="static/js/vue.global.prod.js"></script>
+    <!-- Marked.js - Markdown 渲染 - 本地版本 -->
+    <script src="static/js/marked.min.js"></script>
+    <!-- Material Icons - 使用国内CDN镜像 -->
+    <link href="https://fonts.loli.net/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <!-- 公共配置 -->
+    <script src="config.js"></script>
+    <!-- 认证模块样式 -->
+    <link rel="stylesheet" href="auth-modal.css" />
+    <!-- 认证模块 -->
+    <script src="auth.js"></script>
+    <!-- 任务历史 API 模块 -->
+    <script src="task-history-api.js"></script>
+  </head>
+  <body>
+    <!-- 页面加载遮罩层 -->
+    <div id="pageLoadingOverlay" class="page-loading-overlay">
+        <div class="loading-logo">
+            <span class="loading-logo-text">📊</span>
+        </div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在加载...</div>
+    </div>
+
+    <div id="app" class="page-wrapper flow-page-wrapper" v-cloak>
+    <!-- 统一页头 -->
+    <header class="site-head">
+      <div class="head-inner">
+        <div style="display: flex; align-items: center;  gap: 9px;">
+          <a href="https://www.nstl.gov.cn/" class="brand">
+            <div class="logo-wrapper">
+                <img class="logo-icon" src="static/images/logo.png" alt="NSTL Logo">
+            </div>
+            <div class="logo-text-wrapper">
+                <img class="logo-text" src="static/images/logo-text.png" alt="国家科技图书文献中心">
+            </div>
+        </a>
+        <a href="https://www.nstl.gov.cn/ai/index_qa" class="product">  
+          <span class="product-name">创新服务助手</span>
+          <!-- <span class="badge">V3.0版</span> -->
+           <img src="static/images/icon-version-3.0.png" alt="V3.0版">
+      </a>
+        <div class="mini-program-tip">
+            <img class="mini-program-bg" src="static/images/wxMini_in-BNULTIgP.png" alt="">
+          <div class="tip-badge">
+            <span class="tip-text">小程序上线</span>
+            <span class="tip-text-btn">欢迎体验</span>
+            </div><div class="qrcode-popup">
+              <img src="static/images/QRcode4-BSI3YE5n.png" alt="小程序二维码">
+            </div>
+          </div>
+        </div>
+         
+
+        <div class="head-actions">
+          <a
+            @click="viewTaskHistory"
+            class="history-link"
+            :class="{ 'requires-login': !isAuthenticated }"
+            :title="isAuthenticated ? '任务列表' : '登录后可查看任务列表'"
+          >
+            <img src="static/images/history.png" alt="">
+            任务列表
+          </a>
+          <div
+            v-if="!isAuthenticated"
+            class="user-chip is-login-action"
+            title="点击登录"
+            @click="handleAccountChipClick"
+          >
+            <span class="user-name">登录</span>
+          </div>
+        </div>
+      </div>
+  </header>
+
+      <main class="page-content">
+        <div class="back-button-bar">
+          <div class="btn-back" @click="goBackToIndex">
+            <span class="material-icons-outlined">chevron_left</span>
+            返回首页
+          </div>
+        </div>
+        <div class="history-page-container">
+          <!-- 左侧边栏：任务列表 -->
+          <aside class="history-sidebar">
+            <div class="sidebar-header">
+              <div class="sidebar-title-row">
+                <h2 class="sidebar-title">任务历史</h2>
+                <!-- <button class="btn-outline btn-back-home" onclick="window.open('index.html', '_blank')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                  </svg>
+                  返回首页
+                </button> -->
+              </div>
+              <p class="sidebar-sub">查看所有一致性评估任务记录</p>
+              <!-- ========== 显示当前用户 ========== -->
+<!--              <p class="sidebar-user" v-if="currentUserId !== 'default'"-->
+<!--                 style="font-size: 12px; color: #6b7280; margin-top: 8px;">-->
+<!--                <span class="material-icons-outlined" style="font-size: 14px; vertical-align: middle;">person</span>-->
+<!--                当前用户：{{ currentUserId }}-->
+<!--              </p>-->
+              <!-- ==================================== -->
+            </div>
+            
+            <div class="history-filters">
+              <div class="filter-group">
+                <input 
+                  v-model="searchQuery" 
+                  type="text" 
+                  class="search-input"
+                  placeholder="搜索任务主题..."
+                />
+              </div>
+              <div class="filter-group">
+                <select v-model="statusFilter" class="filter-select">
+                  <option value="all">全部状态</option>
+                  <option value="completed">已完成</option>
+                  <option value="running">进行中</option>
+                  <option value="failed">失败</option>
+                  <option value="cancelled">已取消</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="task-list-container">
+              <div 
+                v-for="task in filteredTasks" 
+                :key="task.task_id"
+                class="task-item"
+                :class="{ active: selectedTaskId === task.task_id }"
+                @click="selectTask(task)"
+              >
+                <div class="task-header">
+                  <span class="task-topic">{{ task.topic }}</span>
+                  <div class="task-actions">
+                    <span class="task-status" :class="task.status">
+                      {{ getStatusLabel(task.status) }}
+                    </span>
+                    <button 
+                      class="btn-delete-task" 
+                      @click.stop="confirmDeleteTask(task)"
+                      title="删除此任务"
+                    >
+                      <span class="material-icons-outlined">delete_outline</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="task-meta">
+                  <span class="task-type">{{ task.research_type }}</span>
+                  <span class="task-date">{{ formatDate(task.created_at) }}</span>
+                </div>
+                <div v-if="task.duration_seconds" class="task-duration">
+                  <span class="material-icons-outlined">schedule</span>
+                  {{ formatDuration(task.duration_seconds) }}
+                </div>
+              </div>
+              
+              <div v-if="filteredTasks.length === 0" class="empty-state">
+                <span class="material-icons-outlined">history</span>
+                <p>暂无任务记录</p>
+              </div>
+            </div>
+          </aside>
+
+          <!-- 右侧主内容区：任务基本信息概览 -->
+          <main class="history-main" v-if="selectedTask">
+            <div class="task-overview-card">
+              <!-- 任务标题和状态 -->
+              <div class="overview-header">
+                <h2 class="overview-title">{{ selectedTask.topic }}</h2>
+                <div class="overview-status">
+                     <button class="btn-view-detail" @click="viewTaskDetail">
+                  <span class="material-icons-outlined">open_in_new</span>
+                  查看详细任务信息
+                </button>
+                  <span class="status-badge" :class="selectedTask.status">{{ getStatusLabel(selectedTask.status) }}</span>
+                </div>
+              </div>
+
+              <!-- 任务基本信息网格 -->
+              <div class="overview-info-grid">
+                <div class="info-item">
+                  <span class="info-label">
+                    <span class="material-icons-outlined">label</span>
+                    研究类型
+                  </span>
+                  <span class="info-value">{{ selectedTask.research_type || '-' }}</span>
+                </div>
+                <!-- <div class="info-item">
+                  <span class="info-label">
+                    <span class="material-icons-outlined">tag</span>
+                    任务 ID
+                  </span>
+                  <span class="info-value mono">{{ selectedTask.task_id }}</span>
+                </div> -->
+                <div class="info-item">
+                  <span class="info-label">
+                    <span class="material-icons-outlined">schedule</span>
+                    创建时间
+                  </span>
+                  <span class="info-value">{{ formatDateTime(selectedTask.created_at) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">
+                    <span class="material-icons-outlined">event</span>
+                    完成时间
+                  </span>
+                  <span class="info-value">{{ selectedTask.completed_at ? formatDateTime(selectedTask.completed_at) : '-' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">
+                    <span class="material-icons-outlined">timer</span>
+                    执行时长
+                  </span>
+                  <span class="info-value">{{ selectedTask.duration_seconds ? formatDuration(selectedTask.duration_seconds) : '-' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">
+                    <span class="material-icons-outlined">donut_large</span>
+                    当前步骤
+                  </span>
+                  <span class="info-value">{{ displayCompletedStepsCount }}/{{ displayStageCount }} 步</span>
+                </div>
+              </div>
+
+              <!-- 执行进度 -->
+              <div class="overview-progress">
+                <div class="progress-header">
+                  <span class="progress-label">执行进度</span>
+                  <span class="progress-value">{{ displayProgressPercent }}%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" :style="{ width: displayProgressPercent + '%' }"></div>
+                </div>
+              </div>
+
+              <!-- 步骤预览 -->
+              <div class="overview-steps">
+                <h3 class="steps-title">执行步骤概览</h3>
+                <div class="steps-list">
+                  <!-- 展示 5 个用户可感知阶段 -->
+                  <template v-for="step in steps" :key="step.id">
+                    <div 
+                      v-if="shouldShowStep(step.id)"
+                      class="step-preview-item"
+                      :class="{
+                        completed: isStepCompleted(step.id),
+                        running: isStepRunning(step.id),
+                        failed: isStepFailed(step.id)
+                      }"
+                    >
+                      <span class="step-num">{{ getDisplayStepNumber(step.id) }}</span>
+                      <span class="step-nm">{{ step.name }}</span>
+                      <span class="step-st" :class="getStepPreviewStatus(step.id)">
+                        <span class="material-icons-outlined">{{ getStepStatusIcon(step.id) }}</span>
+                        {{ getStepStatusLabel(step.id) }}
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- 操作按钮 -->
+              <div class="overview-actions">
+                <!-- <button class="btn-view-detail" @click="viewTaskDetail">
+                  <span class="material-icons-outlined">open_in_new</span>
+                  查看详细任务信息
+                </button> -->
+              </div>
+            </div>
+          </main>
+
+          <!-- 未选择任务时的提示 -->
+          <main class="history-main" v-else>
+            <div class="no-selection">
+              <span class="material-icons-outlined">article</span>
+              <p>请从左侧选择一个任务查看详情</p>
+            </div>
+          </main>
+
+          <!-- 删除确认弹框 -->
+          <div v-if="showDeleteConfirm" class="delete-confirm-overlay" @click.self="cancelDelete">
+            <div class="delete-confirm-dialog">
+              <div class="delete-confirm-header">
+                <span class="material-icons-outlined">warning_amber</span>
+                <h3>确认删除</h3>
+              </div>
+              <div class="delete-confirm-body">
+                <p>确定要删除任务 "<strong>{{ taskToDelete?.topic }}</strong>" 吗？</p>
+                <p class="delete-confirm-warning">此操作不可撤销，删除后数据将无法恢复。</p>
+              </div>
+              <div class="delete-confirm-footer">
+                <button class="btn-cancel-delete" @click="cancelDelete">取消</button>
+                <button class="btn-confirm-delete" @click="executeDelete">确认删除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- 统一页尾 -->
+      <footer class="site-footer">
+        <div class="footer-inner">
+          <div class="footer-links">
+            <div class="footer-section">
+              <h5>关于我们</h5>
+              <ul>
+
+                <li><a href="https://www.nstl.gov.cn/Portal/zzjg_jgjj.html" target="_blank">组织机构</a></li>
+                <li><a href="https://www.nstl.gov.cn/Portal/qgwftx_qgfwtxjs.html" target="_blank">全国服务体系</a></li>
+                <li><a href="https://www.nstl.gov.cn/Portal/kxyj_kfhq.html" target="_blank">研究与发展</a></li>
+                <li><a href="https://www.nstl.gov.cn/Portal/gjhz_scoap3.html" target="_blank">国际合作与交流</a></li>
+                <li><a href="https://www.nstl.gov.cn/Portal/lxwm.html" target="_blank">联系我们</a></li>
+                <li><a href="https://www.nstl.gov.cn/Portal/wxzyjs.html" target="_blank">文献资源建设</a></li>
+              </ul>
+            </div>
+            <div class="footer-section">
+              <h5>帮助</h5>
+              <div class="footer-help-columns">
+                <ul>
+                  <li><a href="https://www.nstl.gov.cn/Portal/zyyfw_zyjs.html" target="_blank">资源与服务</a></li>
+                  <li><a href="https://www.nstl.gov.cn/help/zzzx.html" target="_blank">个人中心</a></li>
+                  <li><a href="https://www.nstl.gov.cn/useradvise.html" target="_blank">意见反馈</a></li>
+                </ul>
+                <ul>
+                  <li><a href="https://anyask.nstl.gov.cn/ask" target="_blank">参考咨询</a></li>
+                  <li><a href="https://www.nstl.gov.cn/help/hotright.html" target="_blank">用户热线</a></li>
+                  <li><a href="https://www.nstl.gov.cn/help/copyright.html" target="_blank">版权声明</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-qr-codes">
+            <div class="qr-item">
+              <div class="qr-box">
+                <img src="static/images/officialWeChat.png" alt="官方微信" style="width: 96px; height: 96px; display: block; object-fit: contain;">
+              </div>
+              <span class="qr-label">官方微信</span>
+            </div>
+            <div class="qr-item">
+              <div class="qr-box">
+                <img src="static/images/miniProgram.png" alt="微信小程序" style="width: 96px; height: 96px; display: block; object-fit: contain;">
+              </div>
+              <span class="qr-label">微信小程序</span>
+            </div>
+          </div>
+
+          <div class="footer-info">
+            <div class="info-content">
+              <div class="hotline">
+                <span class="hotline-text">服务热线： 4008-161-200&nbsp;&nbsp;&nbsp;800-990-8900</span>
+              </div>
+              <div class="org-info">
+                <div class="org-badge">
+                  <img src="static/images/blue.png" alt="事业单位" style="width: 64px; height: auto; object-fit: contain;">
+                </div>
+                <div class="org-details">
+                  <h2 class="org-name">国家科技图书文献中心</h2>
+                  <div class="contact-item">
+                    <span class="material-icons-outlined contact-icon">phone</span>
+                    <span>4008-161-200(免长途话费); 800-990-8900(免费); 010-58882057</span>
+                  </div>
+                  <div class="contact-item">
+                    <span class="material-icons-outlined contact-icon">email</span>
+                    <a href="mailto:service@nstl.gov.cn">service@nstl.gov.cn</a>
+                  </div>
+                </div>
+              </div>
+              <div class="footer-bottom">
+                <span class="address">地址：北京市复兴路15号</span>
+                <div class="beian">
+                  <img src="static/images/beian.png" alt="" style="width: 12px; height: 12px; object-fit: contain;">
+                  <a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank">京ICP备10027328号</a>
+                </div>
+              </div>
+              <div class="copyright">
+                © Copyright(C)2023 NSTL All Rights Reserved 版权所有
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+          <!-- 提示弹窗 -->
+    <div v-if="showDialog" class="nstl-dialog-overlay is-open" id="demoDialog" aria-hidden="true">
+      <div class="nstl-dialog" role="dialog" aria-modal="true" aria-labelledby="demoDialogTitle">
+        <div class="nstl-dialog-header">
+          <div class="nstl-dialog-title" id="demoDialogTitle">提示</div>
+          <span class="nstl-dialog-close" id="demoDialogClose" @click="closeDialog">×</span>
+        </div>
+        <div class="nstl-dialog-body">
+          <p class="nstl-dialog-text-primary">{{ dialogMessage }}</p>
+        </div>
+        <div class="nstl-dialog-footer">
+          <button type="button" class="nstl-btn nstl-btn-blue" id="demoDialogConfirm" @click="closeDialog">确认</button>
+          <button type="button" class="nstl-btn nstl-dialog-btn-cancel" id="demoDialogCancel" @click="closeDialog">取消</button>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      // ============================================================================
+      // 认证管理器初始化
+      // ============================================================================
+
+      // 初始化认证管理器（设置为全局变量，供 taskHistoryAPI 使用）
+      window.authManager = new AuthManager({
+        loginServiceUrl: 'https://login.nstl.gov.cn',
+        sessionTimeout: 24 * 60 * 60 * 1000, // 24 小时
+        storageKey: 'cca_user_session',
+        trustedOrigins: ['https://login.nstl.gov.cn'],
+        enableDevMode: false
+      });
+
+      // ============================================================================
+      // Vue 应用定义（延迟初始化）
+      // ============================================================================
+
+      // 一致性评估五阶段定义（与后端 STAGE_DISPLAY_DEFINITIONS 保持一致）
+      const STEPS = [
+        { id: 1, key: 'preprocess', name: '输入预处理', desc: '清洗输入并判断是否可进入评估' },
+        { id: 2, key: 'claim_extract', name: '文本解析与主张提取', desc: '拆分可验证主张并识别主张类型' },
+        { id: 3, key: 'retrieval', name: '文献检索与证据组织', desc: '检索文献、去重并定位证据片段' },
+        { id: 4, key: 'judgment', name: '一致性判定', desc: '逐主张比对证据并给出五类判定' },
+        { id: 5, key: 'output', name: '引用标注与最终输出', desc: '绑定引用编号并生成可追溯结果' }
+      ];
+      const STEP_STATUS_LABELS = {
+        pending: '等待中',
+        running: '进行中',
+        completed: '已完成',
+        failed: '失败',
+        cancelled: '已取消',
+        skipped: '已完成'
+      };
+      const STEP_STATUS_ICONS = {
+        pending: 'radio_button_unchecked',
+        running: 'autorenew',
+        completed: 'check_circle',
+        failed: 'error_outline',
+        cancelled: 'block',
+        skipped: 'check_circle'
+      };
+      const TERMINAL_TASK_STATUSES = new Set(['completed', 'failed', 'cancelled', 'canceled']);
+
+      // Vue 应用实例（延迟初始化）
+      let vueApp = null;
+
+      // 初始化 Vue 应用的函数
+      function initVueApp() {
+        if (vueApp) {
+          console.warn('[Auth] Vue app already initialized');
+          return;
+        }
+
+        console.log('[History] Initializing Vue app...');
+
+        vueApp = createApp({
+        data() {
+          return {
+            // 任务列表数据
+            allTasks: [],
+            searchQuery: '',
+            statusFilter: 'all',
+            selectedTask: null,
+            selectedTaskId: null,
+            taskLogs: [],
+            // 加载状态
+            isLoading: false,
+            error: null,
+            // 步骤定义
+            steps: STEPS,
+            // 当前用户 ID
+            currentUserId: 'default',
+            // 顶栏当前账号
+            currentUser: null,
+            isAuthenticated: false,
+            // 删除确认弹框
+            showDeleteConfirm: false,
+            taskToDelete: null,
+            isDeleting: false,
+            showDialog:false,//是否显示提示弹窗
+            dialogMessage:'',//提示弹窗内容
+            selectedTaskEventSource: null,
+            selectedTaskPollTimer: null,
+            selectedTaskRefreshInFlight: false,
+          };
+        },
+        computed: {
+          accountDisplayName() {
+            if (!this.isAuthenticated) return '未登录';
+            const user = this.currentUser || this.getDisplayUser();
+            return user?.username || user?.userId || 'NSTL用户';
+          },
+
+          accountTitle() {
+            if (!this.isAuthenticated) return '点击登录';
+            const user = this.currentUser || this.getDisplayUser();
+            return `当前用户：${user?.username || user?.userId || 'NSTL用户'}`;
+          },
+
+          filteredTasks() {
+            return this.allTasks.filter(task => {
+              // 状态筛选
+              if (this.statusFilter !== 'all' && task.status !== this.statusFilter) {
+                return false;
+              }
+              // 搜索过滤
+              if (this.searchQuery) {
+                const query = this.searchQuery.toLowerCase();
+                return task.topic.toLowerCase().includes(query) ||
+                       task.research_type.toLowerCase().includes(query);
+              }
+              return true;
+            });
+          },
+
+          displayStageCount() {
+            return this.steps.length || 5;
+          },
+
+          displayCompletedStepsCount() {
+            return this.getCompletedStepsCount(this.selectedTask);
+          },
+
+          displayProgressPercent() {
+            const total = this.displayStageCount || 5;
+            if (!total) return 0;
+            return Math.max(0, Math.min(100, Math.round((this.displayCompletedStepsCount / total) * 100)));
+          }
+        },
+        async mounted() {
+          this.syncCurrentUser();
+          window.addEventListener('authSuccess', this.syncCurrentUser);
+          window.addEventListener('authLogout', this.syncCurrentUser);
+          // ========== 显示当前用户信息 ==========
+          this.currentUserId = window.taskHistoryAPI.getUserScope();
+          if (this.currentUserId !== 'default') {
+            console.log('[History] ✅ 当前用户 ID:', this.currentUserId);
+          }
+          // 注意：不再输出警告，因为在页面加载早期 userId 可能还未获取
+          // 用户信息会在后台静默更新
+          // ======================================
+
+          await this.loadTasks();
+        },
+        beforeUnmount() {
+          this.stopSelectedTaskRealtime();
+          window.removeEventListener('authSuccess', this.syncCurrentUser);
+          window.removeEventListener('authLogout', this.syncCurrentUser);
+        },
+        methods: {
+          getDisplayUser() {
+            if (window.authManager?.getDisplayUserInfo) {
+              return window.authManager.getDisplayUserInfo();
+            }
+            return { userId: 'nstl_user', username: 'NSTL用户', email: '', isFallback: true };
+          },
+
+          syncCurrentUser() {
+            const authenticated = window.authManager?.isAuthenticated?.() ?? false;
+            this.isAuthenticated = authenticated;
+            this.currentUser = authenticated ? this.getDisplayUser() : null;
+          },
+
+          handleAccountChipClick() {
+            this.syncCurrentUser();
+            if (this.isAuthenticated) return;
+            window.authManager?.showLoginModal();
+          },
+
+          viewTaskHistory() {
+            this.syncCurrentUser();
+            if (!this.isAuthenticated) {
+              window.authManager?.showLoginModal();
+              return;
+            }
+            window.location.href = 'history.html';
+          },
+
+          // 关闭提示弹窗
+          closeDialog(){
+            this.showDialog = false;
+          },
+          
+          /**
+           * ✅ 新增: 检查登录状态（异步方法，主动同步主系统状态）
+           * @param {boolean} redirectHome - 未登录时是否跳转首页，默认 false
+           * @returns {Promise<boolean>} 用户是否已登录
+           */
+          async checkLoginStatus(redirectHome = false) {
+            // 检查 authManager 是否存在
+            if (!window.authManager) {
+              console.warn('[Auth] authManager not initialized');
+              return false;
+            }
+            
+            // ✅ 调用 checkAuth() 进行状态同步检查（会主动验证主系统登录状态）
+            const isLoggedIn = await window.authManager.checkAuth();
+            
+            // 如果未登录且需要跳转首页
+            if (!isLoggedIn && redirectHome) {
+              console.log('[Auth] User not logged in, redirecting to index.html');
+              window.location.href = 'index.html';
+              return false;
+            }
+            
+            return isLoggedIn;
+          },
+          
+          /**
+           * ✅ 优化：返回首页（直接跳转，不验证登录）
+           */
+          goBackToIndex() {
+            // 直接跳转到首页，不验证登录状态
+            window.location.href = 'index.html';
+          },
+          
+          getApiBase() {
+            return ClaimConsistencyConfig.getApiBase();
+          },
+
+          // 加载任务列表（优先从后端，回退到 localStorage）
+          async loadTasks() {
+            this.isLoading = true;
+            this.error = null;
+
+            try {
+              // 使用 API 加载任务（自动回退到 localStorage）
+              const result = await window.taskHistoryAPI.listTasks({
+                page: 1,
+                page_size: 100
+              });
+
+              if (result.success) {
+                const tasks = result.data || [];
+                this.allTasks = tasks.map(task => this.normalizeHistoryTask(task));
+                console.log(`[History] 从${result.source}加载了 ${tasks.length} 个任务`);
+              } else {
+                this.allTasks = [];
+                this.error = "加载任务历史失败";
+              }
+
+              // 按创建时间倒序排序
+              this.allTasks.sort((a, b) => {
+                const dateA = new Date(a.created_at);
+                const dateB = new Date(b.created_at);
+                return dateB - dateA;
+              });
+            } catch (err) {
+              console.error("加载任务历史失败:", err);
+              this.error = "加载任务历史失败";
+              this.allTasks = [];
+            } finally {
+              this.isLoading = false;
+            }
+          },
+
+          // 选择任务
+          async selectTask(task) {
+            // ✅ 优化：检查登录状态，未登录跳转首页
+            const isLoggedIn = await this.checkLoginStatus(true);
+            if (!isLoggedIn) {
+              return; // 已跳转首页，不需要其他操作
+            }
+            
+            this.stopSelectedTaskRealtime();
+            this.selectedTaskId = task.task_id;
+            this.selectedTask = this.normalizeHistoryTask(task);
+            console.log('[History] 选择任务:', task.topic, '状态:', task.status);
+
+            // 从后端加载完整的任务详情（包含步骤数据）
+            try {
+              const result = await window.taskHistoryAPI.getTask(task.task_id, true);
+              if (result.success && result.data) {
+                this.applySelectedTaskUpdate(result.data);
+                console.log('[History] 任务详情已加载:', {
+                  task_id: result.data.task_id,
+                  steps_count: (result.data.steps_data || result.data.steps || []).length || 0,
+                  source: result.source
+                });
+              } else {
+                // 如果加载失败，使用列表中的任务数据（不包含步骤）
+                this.applySelectedTaskUpdate(task);
+                console.warn('[History] 加载任务详情失败，使用列表数据');
+              }
+            } catch (err) {
+              console.error('[History] 加载任务详情异常:', err);
+              // 出错时使用列表中的任务数据
+              this.applySelectedTaskUpdate(task);
+            } finally {
+              this.startSelectedTaskRealtime();
+            }
+          },
+
+          // 检查步骤是否完成
+          normalizeHistoryTask(rawTask) {
+            if (!rawTask) return rawTask;
+            const task = { ...rawTask };
+            const rawSteps = Array.isArray(task.steps_data)
+              ? task.steps_data
+              : (Array.isArray(task.steps) ? task.steps : []);
+            const taskStatus = String(task.status || '').toLowerCase();
+            const currentStep = Number(task.current_step || 0);
+            const stepsByKey = {};
+
+            rawSteps.forEach((step, index) => {
+              if (!step || typeof step !== 'object') return;
+              const key = step.step_key || step.key || STEPS[index]?.key;
+              if (key && !stepsByKey[key]) stepsByKey[key] = step;
+            });
+
+            task.steps = STEPS.map((definition, index) => {
+              const rawStep = stepsByKey[definition.key] || rawSteps[index] || {};
+              let status = this.normalizeStepStatus(rawStep.status);
+              if (taskStatus === 'completed' && status === 'pending') {
+                status = 'completed';
+              } else if ((taskStatus === 'failed' || taskStatus === 'cancelled' || taskStatus === 'canceled') && currentStep === definition.id && status === 'pending') {
+                status = taskStatus === 'failed' ? 'failed' : 'cancelled';
+              } else if (currentStep > 0 && definition.id < currentStep && status === 'pending') {
+                status = 'completed';
+              } else if (currentStep > 0 && definition.id === currentStep && status === 'pending' && this.shouldRealtimeTask(taskStatus)) {
+                status = 'running';
+              }
+
+              return {
+                ...rawStep,
+                step_no: definition.id,
+                step_key: definition.key,
+                title: rawStep.title || definition.name,
+                name: rawStep.name || definition.name,
+                desc: rawStep.desc || definition.desc,
+                status,
+                summary: rawStep.summary || '',
+                sub_steps: Array.isArray(rawStep.sub_steps) ? rawStep.sub_steps : [],
+                degradations: Array.isArray(rawStep.degradations) ? rawStep.degradations : [],
+                payload: rawStep.payload || {}
+              };
+            });
+            task.steps_data = task.steps;
+            return task;
+          },
+
+          normalizeStepStatus(status) {
+            const raw = String(status || '').trim().toLowerCase();
+            if (['completed', 'done', 'success', 'succeeded'].includes(raw)) return 'completed';
+            if (['running', 'processing', 'in_progress'].includes(raw)) return 'running';
+            if (['failed', 'error'].includes(raw)) return 'failed';
+            if (['cancelled', 'canceled'].includes(raw)) return 'cancelled';
+            if (raw === 'skipped') return 'skipped';
+            return 'pending';
+          },
+
+          getStepById(stepId) {
+            return this.selectedTask?.steps?.[stepId - 1] || null;
+          },
+
+          getStepPreviewStatus(stepId) {
+            return this.normalizeStepStatus(this.getStepById(stepId)?.status);
+          },
+
+          isStepCompleted(stepId) {
+            const status = this.getStepPreviewStatus(stepId);
+            return status === 'completed' || status === 'skipped';
+          },
+
+          isStepRunning(stepId) {
+            return this.getStepPreviewStatus(stepId) === 'running';
+          },
+
+          isStepFailed(stepId) {
+            const status = this.getStepPreviewStatus(stepId);
+            return status === 'failed' || status === 'cancelled';
+          },
+
+          getStepStatusLabel(stepId) {
+            return STEP_STATUS_LABELS[this.getStepPreviewStatus(stepId)] || '等待中';
+          },
+
+          getStepStatusIcon(stepId) {
+            return STEP_STATUS_ICONS[this.getStepPreviewStatus(stepId)] || STEP_STATUS_ICONS.pending;
+          },
+
+          applySelectedTaskUpdate(rawTask) {
+            const task = this.normalizeHistoryTask(rawTask);
+            if (!task?.task_id || (this.selectedTaskId && task.task_id !== this.selectedTaskId)) return;
+            this.selectedTask = task;
+            this.updateTaskListItem(task);
+          },
+
+          updateTaskListItem(task) {
+            const index = this.allTasks.findIndex(item => item.task_id === task.task_id);
+            if (index < 0) return;
+            this.allTasks[index] = {
+              ...this.allTasks[index],
+              ...task,
+              steps: task.steps,
+              steps_data: task.steps_data
+            };
+          },
+
+          isTerminalTaskStatus(status) {
+            return TERMINAL_TASK_STATUSES.has(String(status || '').toLowerCase());
+          },
+
+          shouldRealtimeTask(status) {
+            return ['queued', 'pending', 'running', 'processing'].includes(String(status || '').toLowerCase());
+          },
+
+          startSelectedTaskRealtime() {
+            this.stopSelectedTaskRealtime();
+            if (!this.selectedTask?.task_id || this.isTerminalTaskStatus(this.selectedTask.status)) return;
+            if (typeof EventSource === 'undefined') {
+              this.scheduleSelectedTaskPolling();
+              return;
+            }
+            try {
+              const apiBase = window.taskHistoryAPI.getApiBase();
+              const userScope = window.taskHistoryAPI.getUserScope();
+              const url = `${apiBase}/v1/tasks/${encodeURIComponent(this.selectedTask.task_id)}/stream?user_scope=${encodeURIComponent(userScope)}`;
+              const eventSource = new EventSource(url);
+              eventSource.addEventListener('task', (event) => {
+                try {
+                  const payload = JSON.parse(event.data || '{}');
+                  if (payload?.data) {
+                    this.applySelectedTaskUpdate(payload.data);
+                  }
+                } catch (err) {
+                  console.warn('[History] SSE parse failed:', err);
+                }
+              });
+              eventSource.addEventListener('done', () => {
+                this.stopSelectedTaskRealtime();
+              });
+              eventSource.onerror = () => {
+                this.stopSelectedTaskRealtime();
+                this.scheduleSelectedTaskPolling();
+              };
+              this.selectedTaskEventSource = eventSource;
+            } catch (err) {
+              console.warn('[History] start task stream failed:', err);
+              this.scheduleSelectedTaskPolling();
+            }
+          },
+
+          stopSelectedTaskRealtime() {
+            if (this.selectedTaskEventSource) {
+              this.selectedTaskEventSource.close();
+              this.selectedTaskEventSource = null;
+            }
+            if (this.selectedTaskPollTimer) {
+              clearTimeout(this.selectedTaskPollTimer);
+              this.selectedTaskPollTimer = null;
+            }
+            this.selectedTaskRefreshInFlight = false;
+          },
+
+          scheduleSelectedTaskPolling() {
+            if (!this.selectedTask?.task_id || this.isTerminalTaskStatus(this.selectedTask.status)) return;
+            if (this.selectedTaskPollTimer) {
+              clearTimeout(this.selectedTaskPollTimer);
+            }
+            this.selectedTaskPollTimer = setTimeout(() => {
+              this.selectedTaskPollTimer = null;
+              this.refreshSelectedTaskDetail();
+            }, 1500);
+          },
+
+          async refreshSelectedTaskDetail() {
+            if (this.selectedTaskRefreshInFlight || !this.selectedTask?.task_id) return;
+            this.selectedTaskRefreshInFlight = true;
+            try {
+              const result = await window.taskHistoryAPI.getTask(this.selectedTask.task_id, true);
+              if (result.success && result.data) {
+                this.applySelectedTaskUpdate(result.data);
+              }
+            } catch (err) {
+              console.warn('[History] refresh task detail failed:', err);
+            } finally {
+              this.selectedTaskRefreshInFlight = false;
+              this.scheduleSelectedTaskPolling();
+            }
+          },
+
+          // 获取状态标签
+          getStatusLabel(status) {
+            const labels = {
+              'running': '进行中',
+              'completed': '已完成',
+              'failed': '失败',
+              'cancelled': '已取消'
+            };
+            return labels[status] || status;
+          },
+
+          // 格式化日期
+          formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN');
+          },
+
+          // 格式化日期时间
+          formatDateTime(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN');
+          },
+
+          // 格式化时长
+          formatDuration(seconds) {
+            if (!seconds) return '-';
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            if (minutes > 0) {
+              return `${minutes}分${secs}秒`;
+            }
+            return `${secs}秒`;
+          },
+
+          // 查看任务详情（跳转到 task_detail.html）
+          async viewTaskDetail() {
+            // ✅ 优化：检查登录状态，未登录跳转首页
+            const isLoggedIn = await this.checkLoginStatus(true);
+            if (!isLoggedIn) {
+              return; // 已跳转首页，不需要其他操作
+            }
+            
+            if (this.selectedTask) {
+              window.location.href = `task_detail.html?task_id=${this.selectedTask.task_id}`;
+            }
+          },
+
+          // 获取已完成步骤数
+          getCompletedStepsCount(task = this.selectedTask) {
+            if (String(task?.status || '').toLowerCase() === 'completed') {
+              return this.steps.length;
+            }
+            const steps = Array.isArray(task?.steps) ? task.steps : [];
+            let completed = 0;
+            for (const step of steps) {
+              const status = this.normalizeStepStatus(step?.status);
+              if (status !== 'completed' && status !== 'skipped') {
+                break;
+              }
+              completed += 1;
+            }
+            return completed;
+          },
+
+          // 判断是否应该显示该步骤（固定 5 个用户可感知阶段）
+          shouldShowStep(stepId) {
+            return stepId >= 1 && stepId <= this.displayStageCount;
+          },
+
+          // 获取显示的步骤编号（直接返回步骤ID）
+          getDisplayStepNumber(stepId) {
+            return stepId;
+          },
+
+          // ========== 任务删除功能 ==========
+          
+          // 显示删除确认弹框
+          confirmDeleteTask(task) {
+            this.taskToDelete = task;
+            this.showDeleteConfirm = true;
+          },
+
+          // 取消删除
+          cancelDelete() {
+            this.showDeleteConfirm = false;
+            this.taskToDelete = null;
+            this.isDeleting = false;
+          },
+
+          // 执行删除操作
+          async executeDelete() {
+            // ✅ 优化：检查登录状态，未登录跳转首页
+            const isLoggedIn = await this.checkLoginStatus(true);
+            if (!isLoggedIn) {
+              return; // 已跳转首页，不需要其他操作
+            }
+            
+            if (!this.taskToDelete || this.isDeleting) return;
+
+            this.isDeleting = true;
+
+            try {
+              const result = await window.taskHistoryAPI.deleteTask(this.taskToDelete.task_id);
+
+              if (result.success) {
+                console.log('[History] 任务已删除:', this.taskToDelete.task_id);
+
+                // 从本地列表中移除任务
+                this.allTasks = this.allTasks.filter(t => t.task_id !== this.taskToDelete.task_id);
+
+                // 如果当前选中的是被删除的任务，清除选中状态
+                if (this.selectedTaskId === this.taskToDelete.task_id) {
+                  this.selectedTask = null;
+                  this.selectedTaskId = null;
+                }
+              } else {
+                this.dialogMessage = '删除失败: ' + (result.message || '未知错误');
+                this.showDialog = true;
+              }
+            } catch (err) {
+              console.error('[History] 删除任务异常:', err);
+              this.dialogMessage = '删除失败: ' + err.message;
+              this.showDialog = true;
+            } finally {
+              this.showDeleteConfirm = false;
+              this.taskToDelete = null;
+              this.isDeleting = false;
+            }
+          }
+        }
+      }).mount('#app');
+
+      // 移除加载遮罩层
+      const overlay = document.getElementById('pageLoadingOverlay');
+      if (overlay) {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 300);
+      }
+      }
+
+      // ============================================================================
+      // 认证流程
+      // ============================================================================
+      
+      // ✅ 优化：页面加载时检查认证状态，未登录跳转首页
+      document.addEventListener('DOMContentLoaded', async () => {
+        console.log('[Auth] Checking authentication status...');
+        
+        const isAuthenticated = await authManager.checkAuth();
+        
+        if (!isAuthenticated) {
+          // ✅ 优化：未认证，直接跳转首页
+          console.log('[Auth] User not authenticated, redirecting to index.html');
+          window.location.href = 'index.html';
+        } else {
+          // 已认证，初始化 Vue 应用
+          console.log('[Auth] User authenticated, initializing Vue app');
+          initVueApp();
+        }
+      });
+      
+      // 监听认证成功事件
+      window.addEventListener('authSuccess', (event) => {
+        console.log('[Auth] Authentication successful', event.detail);
+        
+        // 初始化 Vue 应用
+        initVueApp();
+      });
+    </script>
+
+    <style>
+     
+          .back-button-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 1400px;
+            margin: 0 auto 20px;
+          }
+
+          .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            border-radius: 6px;
+            color: #226ee0;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .btn-back .material-icons-outlined{
+            font-size: 26px;
+            position: relative;
+            top: 1px;
+          }
+
+      .history-page-container {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 0;
+        height: calc(100vh - 130px); /* 减去页头(~60px)和页尾(~80px)高度 */
+        min-height: 500px; /* 保证最小高度，防止过度压缩 */
+        overflow: hidden;
+        width: min(95vw, 1400px);
+        margin: 0 auto;
+        padding: 0 0 20px 0;
+      }
+
+      .history-sidebar {
+        background: #fff;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+        height: 100%; /* 确保高度与容器一致 */
+        border-radius: 10px;
+        background: linear-gradient(180deg, #FAFBFE 0%, #F4FAFF 100%);
+      }
+
+      .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .sidebar-title {
+        margin: 0 0 5px 0;
+        font-size: 18px;
+        color: #1f2937;
+      }
+
+      .sidebar-sub {
+        margin: 0;
+        font-size: 13px;
+        color: #6b7280;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .status-badge.completed {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .status-badge.running {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .status-badge.failed {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .status-badge.pending {
+        background: #e5e7eb;
+        color: #6b7280;
+      }
+
+      .duration-badge {
+        font-size: 11px;
+        color: #9ca3af;
+      }
+
+      .history-filters {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .search-input,
+      .filter-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+
+      .search-input:focus,
+      .filter-select:focus {
+        outline: none;
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+      }
+
+      .task-list-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+      }
+
+      .task-item {
+        padding: 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 8px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .task-item:hover {
+        background: #f9fafb;
+        border-color: #8b5cf6;
+      }
+
+      .task-item.active {
+        background: #f5f3ff;
+        border-color: #8b5cf6;
+      }
+
+      .task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .task-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .btn-delete-task {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: #9ca3af;
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0;
+      }
+
+      .btn-delete-task:hover {
+        background: #fee2e2;
+        color: #ef4444;
+      }
+
+      .btn-delete-task .material-icons-outlined {
+        font-size: 18px;
+      }
+
+      .task-topic {
+        font-weight: 600;
+        font-size: 14px;
+        color: #1f2937;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-right: 10px;
+      }
+
+      .task-status {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .task-status.completed {
+        background: #d1fae5;
+        color: #065f46;
+      }
+
+      .task-status.running {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .task-status.failed {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .task-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 5px;
+      }
+
+      .task-duration {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #9ca3af;
+      }
+
+      .task-duration .material-icons-outlined {
+        font-size: 14px;
+      }
+
+      .history-main {
+        overflow: hidden; /* 改为 hidden，滚动由卡片内部处理 */
+        display: flex; /* 使用 flex 布局 */
+        justify-content: center; /* 水平居中 */
+        min-height: 0;
+      }
+
+      .flow-wrapper {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .main-content-area {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .flow-sidebar {
+        background: #fff;
+        border-right: 1px solid #e5e7eb;
+        overflow-y: auto;
+      }
+
+      .flow-sidebar .sidebar-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        padding: 24px 20px;
+      }
+
+      .flow-sidebar .sidebar-title {
+        font-size: 16px;
+        margin-bottom: 8px;
+        color: #fff;
+      }
+
+      .flow-sidebar .sidebar-sub {
+        font-size: 12px;
+        opacity: 0.9;
+      }
+
+      .step-list-container {
+        padding: 10px;
+      }
+
+      .step-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+      }
+
+      .step-item:hover {
+        border-color: #8b5cf6;
+        background: #f9fafb;
+      }
+
+      .step-item.active {
+        border-color: #8b5cf6;
+        background: #f5f3ff;
+      }
+
+      .step-item.completed {
+        border-color: #10b981;
+      }
+
+      .step-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        flex-shrink: 0;
+      }
+
+      .step-color-1 { background: linear-gradient(135deg, #667eea, #764ba2); }
+      .step-color-2 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+      .step-color-3 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+      .step-color-4 { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+      .step-color-5 { background: linear-gradient(135deg, #fa709a, #fee140); }
+      .step-color-6 { background: linear-gradient(135deg, #30cfd0, #330867); }
+      .step-color-7 { background: linear-gradient(135deg, #a8edea, #fed6e3); }
+      .step-color-8 { background: linear-gradient(135deg, #ff9a9e, #fecfef); }
+      .step-color-9 { background: linear-gradient(135deg, #ffecd2, #fcb69f); }
+      .step-color-10 { background: linear-gradient(135deg, #ff6e7f, #bfe9ff); }
+
+      .step-number {
+        color: #fff;
+      }
+
+      .step-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .step-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        line-height: 1.4;
+      }
+
+      .step-desc {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 2px;
+      }
+
+      .step-status {
+        flex-shrink: 0;
+      }
+
+      .flow-main {
+        overflow-y: auto;
+        padding: 16px;
+        background: #f9fafb;
+      }
+
+      .flow-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .header-title h3 {
+        margin: 0 0 5px 0;
+        font-size: 20px;
+        color: #1f2937;
+      }
+
+      .header-title p {
+        margin: 0;
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-outline,
+      .btn-primary {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        border: none;
+      }
+
+      .btn-outline {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+      }
+
+      .btn-outline:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: #8b5cf6;
+      }
+
+      .btn-outline:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        background: #8b5cf6;
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: #7c3aed;
+      }
+
+      .content-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 24px;
+      }
+
+      .section-block {
+        margin-bottom: 24px;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 16px;
+      }
+
+      .section-icon {
+        font-size: 20px;
+      }
+
+      .section-icon.blue {
+        color: #3b82f6;
+      }
+
+      .section-icon.green {
+        color: #10b981;
+      }
+
+      .section-label {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      .thinking-content {
+        background: #f9fafb;
+        border-radius: 6px;
+        padding: 16px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .thinking-log {
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: #374151;
+      }
+
+      .stream-output-panel {
+        margin-top: 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .stream-output-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        /*background: #f5f3ff;*/
+        /*border-bottom: 1px solid #e5e7eb;*/
+        cursor: pointer;
+        font-size: 13px;
+        color: #7c3aed;
+        font-weight: 600;
+      }
+
+      .stream-output-header:hover {
+        background: #ede9fe;
+      }
+
+      .stream-icon {
+        font-size: 16px;
+      }
+
+      .stream-toggle {
+        margin-left: auto;
+        font-size: 12px;
+      }
+
+      .stream-output-content {
+        background: #fff;
+        padding: 12px;
+      }
+
+      .stream-output-text {
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-all;
+        /*color: #374151;*/
+        margin: 0;
+      }
+
+      .thinking-placeholder,
+      .result-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: #9ca3af;
+        text-align: center;
+      }
+
+      .thinking-placeholder .material-icons-outlined,
+      .result-placeholder .material-icons-outlined {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.3;
+      }
+
+      .result-content {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #374151;
+      }
+
+      .result-markdown {
+        color: #374151;
+      }
+
+      .result-markdown :deep(h1),
+      .result-markdown :deep(h2),
+      .result-markdown :deep(h3),
+      .result-markdown :deep(h4) {
+        margin-top: 16px;
+        margin-bottom: 8px;
+        color: #1f2937;
+      }
+
+      .result-markdown :deep(p) {
+        margin-bottom: 12px;
+      }
+
+      .requirement-summary,
+      .outline-summary,
+      .hotspots-list,
+      .retrieval-section,
+      .screening-stats,
+      .issues-list,
+      .formats-list,
+      .quality-scores {
+        background: #f9fafb;
+        padding: 16px;
+        border-radius: 6px;
+        margin-top: 12px;
+      }
+
+      .score-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .score-item:last-child {
+        border-bottom: none;
+      }
+
+      .score-value {
+        font-weight: 600;
+      }
+
+      .no-selection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #9ca3af;
+        text-align: center;
+      }
+
+      .no-selection .material-icons-outlined {
+        font-size: 64px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      /* 任务概览卡片样式 */
+      .task-overview-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        max-width: 800px;
+        width: 100%;
+        max-height: 100%; /* 限制最大高度 */
+        overflow-y: auto; /* 启用垂直滚动 */
+        overflow-x: hidden;
+      }
+
+      .overview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .overview-title {
+        margin: 0;
+        font-size: 24px;
+        color: #1f2937;
+        line-height: 1.4;
+        flex: 1;
+      }
+      .overview-status {
+        display: flex;
+        align-items: center;
+      }
+      .overview-status .status-badge {
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .overview-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 8px;
+      }
+
+      .info-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      .info-label .material-icons-outlined {
+        font-size: 14px;
+      }
+
+      .info-value {
+        font-size: 14px;
+        color: #1f2937;
+        font-weight: 500;
+      }
+
+      .info-value.mono {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+      }
+
+      .overview-progress {
+        margin-bottom: 28px;
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .progress-label {
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      .progress-value {
+        font-size: 13px;
+        color: #8b5cf6;
+        font-weight: 600;
+      }
+
+      .progress-bar {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .overview-steps {
+        margin-bottom: 28px;
+      }
+
+      .steps-title {
+        margin: 0 0 16px 0;
+        font-size: 15px;
+        color: #374151;
+        font-weight: 600;
+      }
+
+      .steps-list {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+      }
+
+      .step-preview-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 12px 8px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        text-align: center;
+        position: relative;
+      }
+
+      .step-preview-item.completed {
+        background: #d1fae5;
+      }
+
+      .step-preview-item.running {
+        background: #dbeafe;
+      }
+
+      .step-preview-item.failed {
+        background: #fee2e2;
+      }
+
+      .step-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #d1d5db;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .step-preview-item.completed .step-num {
+        background: #10b981;
+      }
+
+      .step-preview-item.running .step-num {
+        background: #2563eb;
+      }
+
+      .step-preview-item.failed .step-num {
+        background: #dc2626;
+      }
+
+      .step-nm {
+        font-size: 11px;
+        color: #6b7280;
+        line-height: 1.2;
+      }
+
+      .step-preview-item.completed .step-nm {
+        color: #065f46;
+      }
+
+      .step-preview-item.running .step-nm {
+        color: #1e40af;
+      }
+
+      .step-preview-item.failed .step-nm {
+        color: #991b1b;
+      }
+
+      .step-st {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        min-height: 16px;
+        font-size: 10px;
+        line-height: 1;
+        color: #6b7280;
+      }
+
+      .step-st .material-icons-outlined {
+        font-size: 13px;
+        color: currentColor;
+      }
+
+      .step-st.completed,
+      .step-st.skipped {
+        color: #059669;
+      }
+
+      .step-st.running {
+        color: #2563eb;
+      }
+
+      .step-st.failed,
+      .step-st.cancelled {
+        color: #dc2626;
+      }
+
+      .overview-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .btn-view-detail {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 13px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        margin: 0 10px 0 0;
+      }
+
+      .btn-view-detail {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+      }
+      .btn-view-detail .material-icons-outlined{
+        font-size: 18px;
+      }
+      .btn-view-detail:hover {
+        background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        transform: translateY(-1px);
+      }
+
+      /* 响应式设计 - 大屏幕优化 */
+      @media (min-width: 1920px) {
+        .history-page-container {
+          height: calc(100vh - 150px); /* 2K/4K 屏幕稍微调整 */
+        }
+        .task-overview-card {
+          max-width: 1000px; /* 大屏幕下允许更宽 */
+        }
+      }
+
+      @media (min-width: 2560px) {
+        .history-page-container {
+          grid-template-columns: 400px 1fr; /* 2K 屏幕侧边栏更宽 */
+          height: calc(100vh - 160px);
+        }
+        .history-main {
+          padding: 32px; /* 更大内边距 */
+        }
+        .task-overview-card {
+          max-width: 1200px;
+          padding: 40px; /* 更大内边距 */
+        }
+      }
+
+      @media (min-width: 3840px) {
+        .history-page-container {
+          grid-template-columns: 450px 1fr; /* 4K 屏幕侧边栏更宽 */
+          height: calc(100vh - 180px);
+        }
+        .history-main {
+          padding: 40px;
+        }
+        .task-overview-card {
+          max-width: 1400px;
+          padding: 48px; /* 更大内边距 */
+        }
+        .overview-title {
+          font-size: 28px;
+        }
+        .info-value {
+          font-size: 16px;
+        }
+      }
+
+      /* 响应式设计 - 小屏幕 */
+      @media (max-width: 1400px) {
+        .main-content-area {
+          grid-template-columns: 320px 1fr;
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .overview-info-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .steps-list {
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .history-page-container {
+          grid-template-columns: 1fr;
+        }
+        
+        .history-sidebar {
+          display: none;
+        }
+        
+        .task-overview-card {
+          padding: 20px;
+        }
+        
+        .overview-title {
+          font-size: 18px;
+        }
+        
+        .steps-list {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .overview-actions {
+          flex-direction: column;
+        }
+        
+        .btn-view-detail {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .steps-list {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* ========== 删除确认弹框样式 ========== */
+      .delete-confirm-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.15s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      .delete-confirm-dialog {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        width: min(420px, 90vw);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        animation: slideUp 0.2s ease-out;
+      }
+
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      .delete-confirm-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .delete-confirm-header .material-icons-outlined {
+        font-size: 28px;
+        color: #f59e0b;
+      }
+
+      .delete-confirm-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #1f2937;
+      }
+
+      .delete-confirm-body {
+        margin-bottom: 24px;
+      }
+
+      .delete-confirm-body p {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #374151;
+        line-height: 1.6;
+      }
+
+      .delete-confirm-body p strong {
+        color: #ef4444;
+        word-break: break-all;
+      }
+
+      .delete-confirm-warning {
+        font-size: 13px !important;
+        color: #9ca3af !important;
+      }
+
+      .delete-confirm-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .btn-cancel-delete,
+      .btn-confirm-delete {
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+      }
+
+      .btn-cancel-delete {
+        background: #f3f4f6;
+        color: #374151;
+      }
+
+      .btn-cancel-delete:hover {
+        background: #e5e7eb;
+      }
+
+      .btn-confirm-delete {
+        background: #ef4444;
+        color: #fff;
+      }
+
+      .btn-confirm-delete:hover:not(:disabled) {
+        background: #dc2626;
+      }
+
+      .btn-confirm-delete:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    </style>
+    <script src="static/js/feedback.js"></script>
+  </body>
+</html>
